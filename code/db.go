@@ -6,18 +6,18 @@ import (
 )
 
 // passwordHash, role, error
-func (app *App) getUser(userID string) (string, string, error) {
+func (app *App) getUser(userID string) (string, int, error) {
 	var password string
-	var role string
+	var role int
 	err := app.db.QueryRow("SELECT password, role FROM users WHERE id = ?", userID).Scan(&password, &role)
 	if err != nil {
-		return "", "", err
+		return "", 0, err
 	}
 	return password, role, nil
 }
 
 func (app *App) createUser(userID string, hashedPassword string) error {
-	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", userID, hashedPassword, "kimetenai")
+	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", userID, hashedPassword, RoleEmployee)
 	return err
 }
 

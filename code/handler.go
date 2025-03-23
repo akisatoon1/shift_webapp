@@ -51,10 +51,18 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, role, err := app.getUser(userID)
+	var roleName string
+	if isAdmin(role) {
+		roleName = "Admin"
+	} else {
+		roleName = "Employee"
+	}
 	fmt.Fprintf(w, `
 		<h1>Your user ID is '%v'</h1>
+		<h2>You are %v<h2>
 		<a href="/logout">Logout</a>
-	`, userID)
+	`, userID, roleName)
 }
 
 func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
