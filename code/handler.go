@@ -8,13 +8,7 @@ import (
 )
 
 func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	userID, err := app.getUserIDFromSession(cookie.Value)
+	userID, err := app.getUserIDFromCookie(r)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
@@ -106,13 +100,7 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	userID, err := app.getUserIDFromSession(cookie.Value)
+	userID, err := app.getUserIDFromCookie(r)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
@@ -132,13 +120,7 @@ func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	userID, err := app.getUserIDFromSession(cookie.Value)
+	userID, err := app.getUserIDFromCookie(r)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
@@ -178,4 +160,17 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
             </form>
 		`)
 	}
+}
+
+func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		return "", err
+	}
+
+	userID, err := app.getUserIDFromSession(cookie.Value)
+	if err != nil {
+		return "", err
+	}
+	return userID, nil
 }
