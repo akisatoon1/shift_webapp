@@ -129,3 +129,12 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 	return
 }
+
+func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+func (app *App) employeeHomeHandler(w http.ResponseWriter, r *http.Request) {
+}
