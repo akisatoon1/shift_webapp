@@ -7,10 +7,6 @@ import (
 	"net/http"
 )
 
-func (app *App) rootHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/home", http.StatusFound)
-}
-
 func (app *App) registerHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		userID := r.FormValue("user_id")

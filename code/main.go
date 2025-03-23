@@ -29,7 +29,6 @@ func main() {
 }
 
 func routing(app *App) {
-	http.HandleFunc("/", app.rootHandler)
 	http.HandleFunc("/home", app.homeHandler)
 	http.HandleFunc("/register", app.registerHandler)
 	http.HandleFunc("/login", app.loginHandler)
