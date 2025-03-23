@@ -20,6 +20,16 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, role, err := app.getUser(userID)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if isAdmin(role) {
+		http.Redirect(w, r, "/admin/home", http.StatusFound)
+		return
+	}
+
 	fmt.Fprintf(w, `
 		<h1>Your user ID is '%v'</h1>
 		<a href="/logout">Logout</a>
