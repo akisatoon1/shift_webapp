@@ -29,13 +29,11 @@ func main() {
 }
 
 func routing(app *App) {
+	http.HandleFunc("/home", app.homeHandler)
 	http.HandleFunc("/login", app.loginHandler)
 	http.HandleFunc("/logout", app.logoutHandler)
 
 	// admin
 	http.HandleFunc("/admin/home", app.adminHomeHandler)
 	http.HandleFunc("/admin/register", app.adminRegisterHandler)
-
-	// employee
-	http.HandleFunc("/employee/home", app.employeeHomeHandler)
 }

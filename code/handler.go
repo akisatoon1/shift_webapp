@@ -47,18 +47,10 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, role, err := app.getUser(userID)
-	var roleName string
-	if isAdmin(role) {
-		roleName = "Admin"
-	} else {
-		roleName = "Employee"
-	}
 	fmt.Fprintf(w, `
 		<h1>Your user ID is '%v'</h1>
-		<h2>You are %v<h2>
 		<a href="/logout">Logout</a>
-	`, userID, roleName)
+	`, userID)
 }
 
 func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -131,10 +123,29 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	userID, err := app.getUserIDFromSession(cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	_, role, err := app.getUser(userID)
+	if isAdmin(role) {
+		fmt.Fprintf(w, `
+		<h1>[Admin]Your user ID is '%v'</h1>
+		<a href="/logout">Logout</a>
+	`, userID)
+	} else {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 }
 
 func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-func (app *App) employeeHomeHandler(w http.ResponseWriter, r *http.Request) {
 }
