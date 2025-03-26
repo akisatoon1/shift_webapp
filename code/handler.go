@@ -99,44 +99,38 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := app.getUserIDFromCookie(r)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
+// middleware
+func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, user)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := app.getUserIDFromCookie(r)
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 
-	usr, err := app.getUser(userID)
-	if isAdmin(usr.Role) {
-		fmt.Fprintf(w, `
+		usr, err := app.getUser(userID)
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		if !isAdmin(usr.Role) {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		handler(w, r, usr)
+	}
+}
+
+func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	fmt.Fprintf(w, `
 		<h1>[Admin]Your user ID is '%v'</h1>
 		<a href="/admin/register">create new user</a><br>
 		<a href="/admin/users">users</a><br>
 		<a href="/logout">Logout</a>
 	`, usr.ID)
-	} else {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
 }
 
-func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := app.getUserIDFromCookie(r)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	usr, err := app.getUser(userID)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-	if !isAdmin(usr.Role) {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
+func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	if r.Method == http.MethodPost {
 		userID := r.FormValue("user_id")
 		password := r.FormValue("password")
@@ -163,23 +157,7 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := app.getUserIDFromCookie(r)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	usr, err := app.getUser(userID)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-	if !isAdmin(usr.Role) {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
+func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	users, err := app.getAllUsers()
 	if err != nil {
 		http.Redirect(w, r, "/admin/home", http.StatusFound)
@@ -202,26 +180,10 @@ func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, html)
 }
 
-func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := app.getUserIDFromCookie(r)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	usr, err := app.getUser(userID)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-	if !isAdmin(usr.Role) {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
+func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	if r.Method == http.MethodPost {
 		deletedUserID := r.FormValue("user_id")
-		err = app.deleteUser(deletedUserID)
+		err := app.deleteUser(deletedUserID)
 		if err != nil {
 			http.Redirect(w, r, "/admin/users", http.StatusFound)
 			return

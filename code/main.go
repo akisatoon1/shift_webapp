@@ -34,8 +34,8 @@ func routing(app *App) {
 	http.HandleFunc("/logout", app.logoutHandler)
 
 	// admin
-	http.HandleFunc("/admin/home", app.adminHomeHandler)
-	http.HandleFunc("/admin/register", app.adminRegisterHandler)
-	http.HandleFunc("/admin/users", app.adminUsersHandler)
-	http.HandleFunc("/admin/delete", app.adminDeleteHandler)
+	http.HandleFunc("/admin/home", app.adminHandler(app.adminHomeHandler))
+	http.HandleFunc("/admin/register", app.adminHandler(app.adminRegisterHandler))
+	http.HandleFunc("/admin/users", app.adminHandler(app.adminUsersHandler))
+	http.HandleFunc("/admin/delete", app.adminHandler(app.adminDeleteHandler))
 }
