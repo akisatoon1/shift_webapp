@@ -46,6 +46,11 @@ func (app *App) createUser(u user) error {
 	return err
 }
 
+func (app *App) deleteUser(userID string) error {
+	_, err := app.db.Exec("DELETE FROM users WHERE id = ?", userID)
+	return err
+}
+
 // sessionID, error
 func (app *App) createSession(userID string) (string, error) {
 	sessionID := generateSessionID()

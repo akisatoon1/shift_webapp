@@ -191,7 +191,36 @@ func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 			%v
 		`, users)
 }
-func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request) {}
+
+func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := app.getUserIDFromCookie(r)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	usr, err := app.getUser(userID)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if !isAdmin(usr.Role) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		deletedUserID := r.FormValue("user_id")
+		err = app.deleteUser(deletedUserID)
+		if err != nil {
+			http.Redirect(w, r, "/admin/users", http.StatusFound)
+			return
+		}
+		http.Redirect(w, r, "/admin/users", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/admin/users", http.StatusFound)
+	}
+}
 
 func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 	cookie, err := r.Cookie("session_id")
