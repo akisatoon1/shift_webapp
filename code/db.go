@@ -20,6 +20,27 @@ func (app *App) getUser(userID string) (user, error) {
 	return u, nil
 }
 
+func (app *App) getAllUsers() ([]user, error) {
+	rows, err := app.db.Query("SELECT id, password, role FROM users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []user
+	for rows.Next() {
+		var usr user
+		if err := rows.Scan(&usr.ID, &usr.Password, &usr.Role); err != nil {
+			return nil, err
+		}
+		users = append(users, usr)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (app *App) createUser(u user) error {
 	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", u.ID, u.Password, RoleEmployee)
 	return err

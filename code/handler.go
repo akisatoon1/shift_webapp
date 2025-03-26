@@ -162,7 +162,34 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request)  {}
+func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := app.getUserIDFromCookie(r)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	usr, err := app.getUser(userID)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if !isAdmin(usr.Role) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	users, err := app.getAllUsers()
+	if err != nil {
+		http.Redirect(w, r, "/admin/home", http.StatusFound)
+		return
+	}
+
+	fmt.Fprintf(w, `
+			<h1>user 一覧</h1>
+			%v
+		`, users)
+}
 func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request) {}
 
 func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
