@@ -111,6 +111,7 @@ func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `
 		<h1>[Admin]Your user ID is '%v'</h1>
 		<a href="/admin/register">create new user</a><br>
+		<a href="/admin/users">users</a><br>
 		<a href="/logout">Logout</a>
 	`, usr.ID)
 	} else {
