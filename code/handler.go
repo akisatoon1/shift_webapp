@@ -162,6 +162,9 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request)  {}
+func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request) {}
+
 func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
