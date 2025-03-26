@@ -186,10 +186,20 @@ func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, `
-			<h1>user 一覧</h1>
-			%v
-		`, users)
+	html := `
+		<h1>user 一覧</h1>
+	`
+	for _, u := range users {
+		// url
+		html += fmt.Sprintf(`
+			<form method="POST" action="/admin/delete">
+				<input type="hidden" name="user_id" value="%v">
+				%vを削除しますか?
+				<button type="submit">Delete</button>
+			</form>
+		`, u.ID, u.ID)
+	}
+	fmt.Fprintln(w, html)
 }
 
 func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request) {
