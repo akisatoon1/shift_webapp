@@ -14,12 +14,12 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, role, err := app.getUser(userID)
+	usr, err := app.getUser(userID)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	if isAdmin(role) {
+	if isAdmin(usr.Role) {
 		http.Redirect(w, r, "/admin/home", http.StatusFound)
 		return
 	}
@@ -27,7 +27,7 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `
 		<h1>Your user ID is '%v'</h1>
 		<a href="/logout">Logout</a>
-	`, userID)
+	`, usr.ID)
 }
 
 func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,13 +36,13 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 		hash := sha256.Sum256([]byte(password))
 
-		hashedPassword, _, err := app.getUser(userID)
+		usr, err := app.getUser(userID)
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
-		if hashedPassword == base64.URLEncoding.EncodeToString(hash[:]) {
-			sessionID, err := app.createSession(userID)
+		if usr.Password == base64.URLEncoding.EncodeToString(hash[:]) {
+			sessionID, err := app.createSession(usr.ID)
 			if err != nil {
 				http.Redirect(w, r, "/login", http.StatusFound)
 				return
@@ -106,13 +106,13 @@ func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, role, err := app.getUser(userID)
-	if isAdmin(role) {
+	usr, err := app.getUser(userID)
+	if isAdmin(usr.Role) {
 		fmt.Fprintf(w, `
 		<h1>[Admin]Your user ID is '%v'</h1>
 		<a href="/admin/register">create new user</a><br>
 		<a href="/logout">Logout</a>
-	`, userID)
+	`, usr.ID)
 	} else {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
@@ -126,12 +126,12 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, role, err := app.getUser(userID)
+	usr, err := app.getUser(userID)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	if !isAdmin(role) {
+	if !isAdmin(usr.Role) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
@@ -142,7 +142,7 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		hash := sha256.Sum256([]byte(password))
 		hashedPassword := base64.URLEncoding.EncodeToString(hash[:])
 
-		err := app.createUser(userID, hashedPassword)
+		err := app.createUser(user{ID: userID, Password: hashedPassword})
 		if err != nil {
 			http.Redirect(w, r, "/admin/register", http.StatusFound)
 			return

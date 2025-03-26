@@ -5,19 +5,23 @@ import (
 	"encoding/base64"
 )
 
-// passwordHash, role, error
-func (app *App) getUser(userID string) (string, int, error) {
-	var password string
-	var role int
-	err := app.db.QueryRow("SELECT password, role FROM users WHERE id = ?", userID).Scan(&password, &role)
-	if err != nil {
-		return "", 0, err
-	}
-	return password, role, nil
+type user struct {
+	ID       string
+	Password string
+	Role     int
 }
 
-func (app *App) createUser(userID string, hashedPassword string) error {
-	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", userID, hashedPassword, RoleEmployee)
+func (app *App) getUser(userID string) (user, error) {
+	u := user{ID: userID}
+	err := app.db.QueryRow("SELECT password, role FROM users WHERE id = ?", u.ID).Scan(&u.Password, &u.Role)
+	if err != nil {
+		return user{}, err
+	}
+	return u, nil
+}
+
+func (app *App) createUser(u user) error {
+	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", u.ID, u.Password, RoleEmployee)
 	return err
 }
 
