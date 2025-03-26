@@ -144,7 +144,7 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		err := app.createUser(userID, hashedPassword)
 		if err != nil {
-			http.Redirect(w, r, "/register", http.StatusFound)
+			http.Redirect(w, r, "/admin/register", http.StatusFound)
 			return
 		}
 		http.Redirect(w, r, "/admin/home", http.StatusFound)
