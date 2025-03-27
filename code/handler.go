@@ -10,12 +10,20 @@ import (
 func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := app.getUserIDFromCookie(r)
 	if err != nil {
+		if err == errDB {
+			responseError(w)
+			return
+		}
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
 	usr, err := app.getUser(userID)
 	if err != nil {
+		if err == errDB {
+			responseError(w)
+			return
+		}
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
@@ -38,12 +46,20 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 		usr, err := app.getUser(userID)
 		if err != nil {
+			if err == errDB {
+				responseError(w)
+				return
+			}
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 		if usr.Password == base64.URLEncoding.EncodeToString(hash[:]) {
 			sessionID, err := app.createSession(usr.ID)
 			if err != nil {
+				if err == errDB {
+					responseError(w)
+					return
+				}
 				http.Redirect(w, r, "/login", http.StatusFound)
 				return
 			}
@@ -84,6 +100,10 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = app.deleteSession(cookie.Value)
 	if err != nil {
+		if err == errDB {
+			responseError(w)
+			return
+		}
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
@@ -104,12 +124,20 @@ func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, us
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := app.getUserIDFromCookie(r)
 		if err != nil {
+			if err == errDB {
+				responseError(w)
+				return
+			}
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
 		usr, err := app.getUser(userID)
 		if err != nil {
+			if err == errDB {
+				responseError(w)
+				return
+			}
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
@@ -139,6 +167,10 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 
 		err := app.createUser(user{ID: userID, Password: hashedPassword})
 		if err != nil {
+			if err == errDB {
+				responseError(w)
+				return
+			}
 			http.Redirect(w, r, "/admin/register", http.StatusFound)
 			return
 		}
@@ -160,6 +192,10 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	users, err := app.getAllUsers()
 	if err != nil {
+		if err == errDB {
+			responseError(w)
+			return
+		}
 		http.Redirect(w, r, "/admin/home", http.StatusFound)
 		return
 	}
@@ -185,6 +221,10 @@ func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr u
 		deletedUserID := r.FormValue("user_id")
 		err := app.deleteUser(deletedUserID)
 		if err != nil {
+			if err == errDB {
+				responseError(w)
+				return
+			}
 			http.Redirect(w, r, "/admin/users", http.StatusFound)
 			return
 		}
@@ -205,4 +245,8 @@ func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 		return "", err
 	}
 	return userID, nil
+}
+
+func responseError(w http.ResponseWriter) {
+	http.Error(w, "サーバーでデータベースエラー", http.StatusInternalServerError)
 }
