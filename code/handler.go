@@ -3,8 +3,10 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 )
 
 func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -14,7 +16,7 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 			responseError(w)
 			return
 		}
-		http.Redirect(w, r, "/login", http.StatusFound)
+		redirectWithError(w, r, "/login", "ログインしてください")
 		return
 	}
 
@@ -24,7 +26,7 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 			responseError(w)
 			return
 		}
-		http.Redirect(w, r, "/login", http.StatusFound)
+		redirectWithError(w, r, "/login", "ログインしてください")
 		return
 	}
 	if isAdmin(usr.Role) {
@@ -48,7 +50,7 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 				responseError(w)
 				return
 			}
-			http.Redirect(w, r, "/login", http.StatusFound)
+			redirectWithError(w, r, "/login", "userIDまたはpasswordが間違っています")
 			return
 		}
 		if usr.Password == base64.URLEncoding.EncodeToString(hash[:]) {
@@ -58,7 +60,7 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 					responseError(w)
 					return
 				}
-				http.Redirect(w, r, "/login", http.StatusFound)
+				http.Error(w, "サーバーエラーによりログイン失敗", http.StatusInternalServerError)
 				return
 			}
 			http.SetCookie(w, &http.Cookie{
@@ -71,13 +73,14 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		} else {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			redirectWithError(w, r, "/login", "userIDまたはpasswordが間違っています")
 			return
 		}
 
 	} else {
+		errorMessage := r.URL.Query().Get("error")
 		tmpl, _ := template.ParseFiles("./html/login.html")
-		tmpl.Execute(w, nil)
+		tmpl.Execute(w, map[string]string{"Error": errorMessage})
 	}
 }
 
@@ -94,7 +97,7 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 			responseError(w)
 			return
 		}
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Error(w, "サーバーエラーによりログアウト失敗", http.StatusInternalServerError)
 		return
 	}
 
@@ -217,4 +220,10 @@ func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 
 func responseError(w http.ResponseWriter) {
 	http.Error(w, "サーバーでデータベースエラー", http.StatusInternalServerError)
+}
+
+func redirectWithError(w http.ResponseWriter, r *http.Request, path string, errMessage string) {
+	redirectURL := fmt.Sprintf("%s?error=%s", path, url.QueryEscape(errMessage))
+	http.Redirect(w, r, redirectURL, http.StatusFound)
+	return
 }
