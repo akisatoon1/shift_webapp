@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
+	"html/template"
 	"net/http"
 )
 
@@ -32,10 +32,8 @@ func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, `
-		<h1>Your user ID is '%v'</h1>
-		<a href="/logout">Logout</a>
-	`, usr.ID)
+	tmpl, _ := template.ParseFiles("./html/home.html")
+	tmpl.Execute(w, usr)
 }
 
 func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,17 +76,9 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprintln(w, `
-                <form method="POST">
-                        <input type="text" name="user_id" placeholder="User ID"><br>
-                        <input type="password" name="password" placeholder="Password"><br>
-                        <button type="submit">Login</button>
-                </form>
-				<a href="/register">create new account</a>
-        `)
+		tmpl, _ := template.ParseFiles("./html/login.html")
+		tmpl.Execute(w, nil)
 	}
-
 }
 
 func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -150,12 +140,8 @@ func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, us
 }
 
 func (app *App) adminHomeHandler(w http.ResponseWriter, r *http.Request, usr user) {
-	fmt.Fprintf(w, `
-		<h1>[Admin]Your user ID is '%v'</h1>
-		<a href="/admin/register">create new user</a><br>
-		<a href="/admin/users">users</a><br>
-		<a href="/logout">Logout</a>
-	`, usr.ID)
+	tmpl, _ := template.ParseFiles("./html/admin/home.html")
+	tmpl.Execute(w, usr)
 }
 
 func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr user) {
@@ -178,14 +164,8 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 		return
 
 	} else {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprintln(w, `
-			<form method="POST">
-				<input type="text" name="user_id" placeholder="User ID"><br>
-				<input type="password" name="password" placeholder="Password"><br>
-				<button type="submit">Register</button>
-            </form>
-		`)
+		tmpl, _ := template.ParseFiles("./html/admin/register.html")
+		tmpl.Execute(w, nil)
 	}
 }
 
@@ -200,20 +180,8 @@ func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request, usr us
 		return
 	}
 
-	html := `
-		<h1>user 一覧</h1>
-	`
-	for _, u := range users {
-		// url
-		html += fmt.Sprintf(`
-			<form method="POST" action="/admin/delete">
-				<input type="hidden" name="user_id" value="%v">
-				%vを削除しますか?
-				<button type="submit">Delete</button>
-			</form>
-		`, u.ID, u.ID)
-	}
-	fmt.Fprintln(w, html)
+	tmpl, _ := template.ParseFiles("./html/admin/users.html")
+	tmpl.Execute(w, users)
 }
 
 func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr user) {

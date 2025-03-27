@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<h1>user 一覧</h1>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Role</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>
+                <form method="POST" action="/admin/delete">
+                    <input type="hidden" name="user_id" value="{{.ID}}">
+                    {{.ID}}を削除しますか?
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+            <td>{{.Role}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
