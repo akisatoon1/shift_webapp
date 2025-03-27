@@ -114,6 +114,10 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // middleware
 func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, user)) http.HandlerFunc {
+	responseForbidden := func(w http.ResponseWriter) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := app.getUserIDFromCookie(r)
 		if err != nil {
@@ -121,7 +125,7 @@ func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, us
 				responseError(w)
 				return
 			}
-			http.Redirect(w, r, "/login", http.StatusFound)
+			responseForbidden(w)
 			return
 		}
 
@@ -131,11 +135,11 @@ func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, us
 				responseError(w)
 				return
 			}
-			http.Redirect(w, r, "/login", http.StatusFound)
+			responseForbidden(w)
 			return
 		}
 		if !isAdmin(usr.Role) {
-			http.Error(w, "Forbidden", http.StatusForbidden)
+			responseForbidden(w)
 			return
 		}
 		handler(w, r, usr)
@@ -160,10 +164,12 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 				responseError(w)
 				return
 			}
-			http.Redirect(w, r, "/admin/register", http.StatusFound)
+			// useridが既に存在している場合、/admin/registerにリダイレクトして
+			// エラーメッセージを表示。
+			// 現在はぜんぶdbエラーでresponseする
 			return
 		}
-		http.Redirect(w, r, "/admin/home", http.StatusFound)
+		http.Redirect(w, r, "/admin/users", http.StatusFound)
 		return
 
 	} else {
@@ -179,7 +185,7 @@ func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request, usr us
 			responseError(w)
 			return
 		}
-		http.Redirect(w, r, "/admin/home", http.StatusFound)
+		// 現在はぜんぶdbエラーでresponseする
 		return
 	}
 
@@ -196,7 +202,7 @@ func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr u
 				responseError(w)
 				return
 			}
-			http.Redirect(w, r, "/admin/users", http.StatusFound)
+			// 現在はぜんぶdbエラーでresponseする
 			return
 		}
 		http.Redirect(w, r, "/admin/users", http.StatusFound)
