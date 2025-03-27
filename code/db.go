@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"log"
 )
 
@@ -13,8 +14,11 @@ type user struct {
 	Role     int
 }
 
-func logDBErr(err error) {
+var errDB = errors.New("db error")
+
+func handleErrDB(err error) error {
 	log.Println("DB ERROR:", err)
+	return errDB
 }
 
 func (app *App) getUser(userID string) (user, error) {
@@ -22,9 +26,9 @@ func (app *App) getUser(userID string) (user, error) {
 	err := app.db.QueryRow("SELECT password, role FROM users WHERE id = ?", u.ID).Scan(&u.Password, &u.Role)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logDBErr(err)
+			return user{}, handleErrDB(err)
 		}
-		return user{}, err
+		return user{}, sql.ErrNoRows
 	}
 	return u, nil
 }
@@ -32,8 +36,7 @@ func (app *App) getUser(userID string) (user, error) {
 func (app *App) getAllUsers() ([]user, error) {
 	rows, err := app.db.Query("SELECT id, password, role FROM users")
 	if err != nil {
-		logDBErr(err)
-		return nil, err
+		return nil, handleErrDB(err)
 	}
 	defer rows.Close()
 
@@ -41,14 +44,12 @@ func (app *App) getAllUsers() ([]user, error) {
 	for rows.Next() {
 		var usr user
 		if err := rows.Scan(&usr.ID, &usr.Password, &usr.Role); err != nil {
-			logDBErr(err)
-			return nil, err
+			return nil, handleErrDB(err)
 		}
 		users = append(users, usr)
 	}
 	if err := rows.Err(); err != nil {
-		logDBErr(err)
-		return nil, err
+		return nil, handleErrDB(err)
 	}
 	return users, nil
 }
@@ -56,17 +57,17 @@ func (app *App) getAllUsers() ([]user, error) {
 func (app *App) createUser(u user) error {
 	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", u.ID, u.Password, RoleEmployee)
 	if err != nil {
-		logDBErr(err)
+		return handleErrDB(err)
 	}
-	return err
+	return nil
 }
 
 func (app *App) deleteUser(userID string) error {
 	_, err := app.db.Exec("DELETE FROM users WHERE id = ?", userID)
 	if err != nil {
-		logDBErr(err)
+		return handleErrDB(err)
 	}
-	return err
+	return nil
 }
 
 // sessionID, error
@@ -74,8 +75,7 @@ func (app *App) createSession(userID string) (string, error) {
 	sessionID := generateSessionID()
 	_, err := app.db.Exec("INSERT INTO sessions (id, user_id) VALUES (?, ?)", sessionID, userID)
 	if err != nil {
-		logDBErr(err)
-		return "", err
+		return "", handleErrDB(err)
 	}
 	return sessionID, nil
 }
@@ -83,8 +83,7 @@ func (app *App) createSession(userID string) (string, error) {
 func (app *App) deleteSession(sessionID string) error {
 	_, err := app.db.Exec("DELETE FROM sessions WHERE id = ?", sessionID)
 	if err != nil {
-		logDBErr(err)
-		return err
+		return handleErrDB(err)
 	}
 	return nil
 }
@@ -96,9 +95,9 @@ func (app *App) getUserIDFromSession(sessionID string) (string, error) {
 	err := app.db.QueryRow("SELECT user_id FROM sessions WHERE id = ?", sessionID).Scan(&userID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logDBErr(err)
+			return "", handleErrDB(err)
 		}
-		return "", err
+		return "", sql.ErrNoRows
 	}
 	return userID, nil
 }
