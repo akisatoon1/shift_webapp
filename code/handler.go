@@ -112,8 +112,8 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// middleware
-func (app *App) adminHandler(handler func(http.ResponseWriter, *http.Request, user)) http.HandlerFunc {
+// /admin/*へのアクセスは、adminアカウントのみ許可する。
+func (app *App) adminMiddleware(handler func(http.ResponseWriter, *http.Request, user)) http.HandlerFunc {
 	responseForbidden := func(w http.ResponseWriter) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 	}
