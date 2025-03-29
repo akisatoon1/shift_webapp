@@ -29,13 +29,15 @@ func main() {
 }
 
 func routing(app *App) {
-	http.HandleFunc("/home", app.homeHandler)
-	http.HandleFunc("/login", app.loginHandler)
-	http.HandleFunc("/logout", app.logoutHandler)
+	http.HandleFunc("GET /home", app.homeHandler)
+	http.HandleFunc("GET /login", app.loginHandler)
+	http.HandleFunc("POST /login", app.loginHandler)
+	http.HandleFunc("POST /logout", app.logoutHandler)
 
 	// admin
-	http.HandleFunc("/admin/home", app.adminMiddleware(app.adminHomeHandler))
-	http.HandleFunc("/admin/register", app.adminMiddleware(app.adminRegisterHandler))
-	http.HandleFunc("/admin/users", app.adminMiddleware(app.adminUsersHandler))
-	http.HandleFunc("/admin/delete", app.adminMiddleware(app.adminDeleteHandler))
+	http.HandleFunc("GET /admin/home", app.adminMiddleware(app.adminHomeHandler))
+	http.HandleFunc("GET /admin/register", app.adminMiddleware(app.adminRegisterHandler))
+	http.HandleFunc("POST /admin/register", app.adminMiddleware(app.adminRegisterHandler))
+	http.HandleFunc("GET /admin/users", app.adminMiddleware(app.adminUsersHandler))
+	http.HandleFunc("POST /admin/delete", app.adminMiddleware(app.adminDeleteHandler))
 }

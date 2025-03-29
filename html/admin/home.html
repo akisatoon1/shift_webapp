@@ -2,4 +2,6 @@
 <h1>[Admin]Your user ID is '{{.ID}}'</h1>
 <a href="/admin/register">create new user</a><br>
 <a href="/admin/users">users</a><br>
-<a href="/logout">Logout</a>
+<form method="POST" action="/logout">
+    <button type="submit">Logout</button>
+</form>

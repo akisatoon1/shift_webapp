@@ -192,17 +192,13 @@ func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request, usr us
 }
 
 func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr user) {
-	if r.Method == http.MethodPost {
-		deletedUserID := r.FormValue("user_id")
-		err := app.deleteUser(deletedUserID)
-		if err != nil {
-			responseServerError(w)
-			return
-		}
-		http.Redirect(w, r, "/admin/users", http.StatusFound)
-	} else {
-		http.Redirect(w, r, "/admin/users", http.StatusFound)
+	deletedUserID := r.FormValue("user_id")
+	err := app.deleteUser(deletedUserID)
+	if err != nil {
+		responseServerError(w)
+		return
 	}
+	http.Redirect(w, r, "/admin/users", http.StatusFound)
 }
 
 func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
