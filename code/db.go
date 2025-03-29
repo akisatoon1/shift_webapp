@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"log"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 type user struct {
@@ -14,7 +16,12 @@ type user struct {
 	Role     int
 }
 
-var errDB = errors.New("db error")
+var (
+	errDB              = errors.New("database error")
+	errUserNotFound    = errors.New("user not found")
+	errSessionNotFound = errors.New("session not found")
+	errInvalidUserID   = errors.New("invalid user id")
+)
 
 func handleErrDB(err error) error {
 	log.Println("DB ERROR:", err)
@@ -28,7 +35,7 @@ func (app *App) getUser(userID string) (user, error) {
 		if err != sql.ErrNoRows {
 			return user{}, handleErrDB(err)
 		}
-		return user{}, sql.ErrNoRows
+		return user{}, errUserNotFound
 	}
 	return u, nil
 }
@@ -57,6 +64,9 @@ func (app *App) getAllUsers() ([]user, error) {
 func (app *App) createUser(u user) error {
 	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", u.ID, u.Password, RoleEmployee)
 	if err != nil {
+		if err == sqlite3.ErrConstraintPrimaryKey {
+			return errInvalidUserID
+		}
 		return handleErrDB(err)
 	}
 	return nil
@@ -97,7 +107,7 @@ func (app *App) getUserIDFromSession(sessionID string) (string, error) {
 		if err != sql.ErrNoRows {
 			return "", handleErrDB(err)
 		}
-		return "", sql.ErrNoRows
+		return "", errSessionNotFound
 	}
 	return userID, nil
 }
