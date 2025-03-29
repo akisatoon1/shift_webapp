@@ -3,30 +3,37 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
 )
 
+var (
+	errUserNotFound    = errors.New("user not found")
+	errSessionNotFound = errors.New("session not found")
+	errInvalidUserID   = errors.New("invalid user id")
+)
+
 func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := app.getUserIDFromCookie(r)
 	if err != nil {
-		if err == errDB {
-			responseError(w)
-			return
+		if err == errSessionNotFound {
+			redirectWithError(w, r, "/login", "ログインしてください")
+		} else {
+			responseServerError(w)
 		}
-		redirectWithError(w, r, "/login", "ログインしてください")
 		return
 	}
 
 	usr, err := app.getUser(userID)
 	if err != nil {
-		if err == errDB {
-			responseError(w)
-			return
+		if err == errUserNotFound {
+			redirectWithError(w, r, "/login", "ログインしてください")
+		} else {
+			responseServerError(w)
 		}
-		redirectWithError(w, r, "/login", "ログインしてください")
 		return
 	}
 	if isAdmin(usr.Role) {
@@ -46,21 +53,18 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 		usr, err := app.getUser(userID)
 		if err != nil {
-			if err == errDB {
-				responseError(w)
-				return
+			if err == errUserNotFound {
+				redirectWithError(w, r, "/login", "userIDまたはpasswordが間違っています")
+			} else {
+				responseServerError(w)
 			}
-			redirectWithError(w, r, "/login", "userIDまたはpasswordが間違っています")
 			return
 		}
+		// password check
 		if usr.Password == base64.URLEncoding.EncodeToString(hash[:]) {
 			sessionID, err := app.createSession(usr.ID)
 			if err != nil {
-				if err == errDB {
-					responseError(w)
-					return
-				}
-				http.Error(w, "サーバーエラーによりログイン失敗", http.StatusInternalServerError)
+				responseServerError(w)
 				return
 			}
 			http.SetCookie(w, &http.Cookie{
@@ -73,6 +77,7 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		} else {
+			// paswordが一致しない時
 			redirectWithError(w, r, "/login", "userIDまたはpasswordが間違っています")
 			return
 		}
@@ -93,11 +98,7 @@ func (app *App) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = app.deleteSession(cookie.Value)
 	if err != nil {
-		if err == errDB {
-			responseError(w)
-			return
-		}
-		http.Error(w, "サーバーエラーによりログアウト失敗", http.StatusInternalServerError)
+		responseServerError(w)
 		return
 	}
 
@@ -121,21 +122,21 @@ func (app *App) adminMiddleware(handler func(http.ResponseWriter, *http.Request,
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := app.getUserIDFromCookie(r)
 		if err != nil {
-			if err == errDB {
-				responseError(w)
-				return
+			if err == errSessionNotFound {
+				responseForbidden(w)
+			} else {
+				responseServerError(w)
 			}
-			responseForbidden(w)
 			return
 		}
 
 		usr, err := app.getUser(userID)
 		if err != nil {
-			if err == errDB {
-				responseError(w)
-				return
+			if err == errUserNotFound {
+				responseForbidden(w)
+			} else {
+				responseServerError(w)
 			}
-			responseForbidden(w)
 			return
 		}
 		if !isAdmin(usr.Role) {
@@ -160,13 +161,14 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 
 		err := app.createUser(user{ID: userID, Password: hashedPassword})
 		if err != nil {
-			if err == errDB {
-				responseError(w)
-				return
+			if err == errInvalidUserID {
+				http.Error(w, "無効なuser idです", http.StatusBadRequest)
+			} else {
+				responseServerError(w)
 			}
 			// useridが既に存在している場合、/admin/registerにリダイレクトして
 			// エラーメッセージを表示。
-			// 現在はぜんぶdbエラーでresponseする
+			// 現在はhttp errorでメッセージを表示する
 			return
 		}
 		http.Redirect(w, r, "/admin/users", http.StatusFound)
@@ -181,11 +183,7 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 func (app *App) adminUsersHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	users, err := app.getAllUsers()
 	if err != nil {
-		if err == errDB {
-			responseError(w)
-			return
-		}
-		// 現在はぜんぶdbエラーでresponseする
+		responseServerError(w)
 		return
 	}
 
@@ -198,11 +196,7 @@ func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr u
 		deletedUserID := r.FormValue("user_id")
 		err := app.deleteUser(deletedUserID)
 		if err != nil {
-			if err == errDB {
-				responseError(w)
-				return
-			}
-			// 現在はぜんぶdbエラーでresponseする
+			responseServerError(w)
 			return
 		}
 		http.Redirect(w, r, "/admin/users", http.StatusFound)
@@ -214,7 +208,7 @@ func (app *App) adminDeleteHandler(w http.ResponseWriter, r *http.Request, usr u
 func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		return "", err
+		return "", errSessionNotFound
 	}
 
 	userID, err := app.getUserIDFromSession(cookie.Value)
@@ -224,7 +218,7 @@ func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 	return userID, nil
 }
 
-func responseError(w http.ResponseWriter) {
+func responseServerError(w http.ResponseWriter) {
 	http.Error(w, "サーバーでデータベースエラー", http.StatusInternalServerError)
 }
 
