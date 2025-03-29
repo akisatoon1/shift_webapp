@@ -34,7 +34,11 @@ func routing(app *App) {
 	http.HandleFunc("POST /login", app.loginHandler)
 	http.HandleFunc("POST /logout", app.logoutHandler)
 
-	// admin
+	// adminのみアクセスできる
+	// /admin/*という形の存在しないリソースは、adminには404notfound, 他へはアクセスを禁じる
+	http.HandleFunc("GET /admin/", app.adminMiddleware(func(w http.ResponseWriter, r *http.Request, usr user) {
+		http.NotFound(w, r)
+	}))
 	http.HandleFunc("GET /admin/home", app.adminMiddleware(app.adminHomeHandler))
 	http.HandleFunc("GET /admin/register", app.adminMiddleware(app.adminRegisterHandler))
 	http.HandleFunc("POST /admin/register", app.adminMiddleware(app.adminRegisterHandler))
