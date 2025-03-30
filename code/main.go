@@ -29,6 +29,11 @@ func main() {
 }
 
 func routing(app *App) {
+	userManagementRouting(app)
+	shiftRequestRouting(app)
+}
+
+func userManagementRouting(app *App) {
 	http.HandleFunc("GET /home", app.homeHandler)
 	http.HandleFunc("GET /login", app.loginHandler)
 	http.HandleFunc("POST /login", app.loginHandler)
@@ -44,4 +49,11 @@ func routing(app *App) {
 	http.HandleFunc("POST /admin/register", app.adminMiddleware(app.adminRegisterHandler))
 	http.HandleFunc("GET /admin/users", app.adminMiddleware(app.adminUsersHandler))
 	http.HandleFunc("POST /admin/delete", app.adminMiddleware(app.adminDeleteHandler))
+}
+
+func shiftRequestRouting(app *App) {
+	http.HandleFunc("GET /admin/requests", app.adminMiddleware(app.showRequestsHandler))
+	http.HandleFunc("GET /admin/requests/create", app.adminMiddleware(app.requestCreatePageHandler))
+	http.HandleFunc("POST /admin/requests", app.adminMiddleware(app.createRequestHandler))
+	// http.HandleFunc("GET /admin/requests/{request_id}")
 }

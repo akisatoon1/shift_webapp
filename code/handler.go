@@ -16,6 +16,11 @@ var (
 	errInvalidUserID   = errors.New("invalid user id")
 )
 
+/*
+	user management handlers
+	ユーザ管理やログインに関する処理をするハンドラーたち。
+*/
+
 // /home
 // ユーザーのホーム画面を表示する
 func (app *App) homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -244,3 +249,13 @@ func redirectWithError(w http.ResponseWriter, r *http.Request, path string, errM
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 	return
 }
+
+/*
+	shift request handlers
+	シフト要請に関する処理をするハンドラーたち。
+*/
+
+func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request, usr user)      {}
+func (app *App) requestCreatePageHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr user)     {}
+func (app *App) showRequestDetailHandler(w http.ResponseWriter, r *http.Request, usr user) {}
