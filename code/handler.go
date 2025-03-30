@@ -255,7 +255,10 @@ func redirectWithError(w http.ResponseWriter, r *http.Request, path string, errM
 	シフト要請に関する処理をするハンドラーたち。
 */
 
-func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request, usr user)      {}
-func (app *App) requestCreatePageHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+func (app *App) requestCreatePageHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	tmpl, _ := template.ParseFiles("./html/admin/requests/create.html")
+	tmpl.Execute(w, nil)
+}
 func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr user)     {}
 func (app *App) showRequestDetailHandler(w http.ResponseWriter, r *http.Request, usr user) {}
