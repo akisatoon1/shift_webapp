@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -13,6 +14,14 @@ type user struct {
 	ID       string
 	Password string
 	Role     int
+}
+
+type request struct {
+	ID        string
+	ManagerID string
+	StartDate string
+	EndDate   string
+	CreatedAt string
 }
 
 func logErr(err error) error {
@@ -108,4 +117,34 @@ func generateSessionID() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.URLEncoding.EncodeToString(b)
+}
+
+func (app *App) createRequest(manager_id string, start_date string, end_date string) error {
+	id, _ := uuid.NewRandom()
+	_, err := app.db.Exec("INSERT INTO shift_requests (id, manager_id, start_date, end_date) VALUES (?, ?, ?, ?)", id, manager_id, start_date, end_date)
+	if err != nil {
+		return logErr(err)
+	}
+	return nil
+}
+
+func (app *App) getAllRequests() ([]request, error) {
+	rows, err := app.db.Query("SELECT id, manager_id, start_date, end_date, created_at FROM shift_requests")
+	if err != nil {
+		return nil, logErr(err)
+	}
+	defer rows.Close()
+
+	var requests []request
+	for rows.Next() {
+		var req request
+		if err := rows.Scan(&req.ID, &req.ManagerID, &req.StartDate, &req.EndDate, &req.CreatedAt); err != nil {
+			return nil, logErr(err)
+		}
+		requests = append(requests, req)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, logErr(err)
+	}
+	return requests, nil
 }

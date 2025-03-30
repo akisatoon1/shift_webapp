@@ -255,10 +255,28 @@ func redirectWithError(w http.ResponseWriter, r *http.Request, path string, errM
 	シフト要請に関する処理をするハンドラーたち。
 */
 
-func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	requests, err := app.getAllRequests()
+	if err != nil {
+		responseServerError(w)
+	}
+	tmpl, err := template.ParseFiles("./html/admin/requests.html")
+	tmpl.Execute(w, requests)
+}
+
 func (app *App) requestCreatePageHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	tmpl, _ := template.ParseFiles("./html/admin/requests/create.html")
 	tmpl.Execute(w, nil)
 }
-func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr user)     {}
+
+func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	start_date := r.FormValue("start_date")
+	end_date := r.FormValue("end_date")
+	err := app.createRequest(usr.ID, start_date, end_date)
+	if err != nil {
+		responseServerError(w)
+		return
+	}
+	http.Redirect(w, r, "/admin/requests", http.StatusFound)
+}
 func (app *App) showRequestDetailHandler(w http.ResponseWriter, r *http.Request, usr user) {}
