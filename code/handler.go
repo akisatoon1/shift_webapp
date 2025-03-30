@@ -255,7 +255,7 @@ func redirectWithError(w http.ResponseWriter, r *http.Request, path string, errM
 	シフト要請に関する処理をするハンドラーたち。
 */
 
-func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request, usr user) {
+func (app *App) adminShowRequestsHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	requests, err := app.getAllRequests()
 	if err != nil {
 		responseServerError(w)
@@ -279,4 +279,21 @@ func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr
 	}
 	http.Redirect(w, r, "/admin/requests", http.StatusFound)
 }
-func (app *App) showRequestDetailHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+
+/*
+	admin submission handler
+	管理者アカウントの提出されたシフトに対する処理をするハンドラーたち。
+*/
+
+func (app *App) adminShowSubmissionsHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+func (app *App) showUserSubmissionHandler(w http.ResponseWriter, r *http.Request, usr user)   {}
+
+/*
+	user requests handler
+	ユーザのシフト提出に関する処理をするハンドラーたち。
+*/
+
+func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request)    {}
+func (app *App) submissionPageHandler(w http.ResponseWriter, r *http.Request)  {}
+func (app *App) submitShiftHandler(w http.ResponseWriter, r *http.Request)     {}
+func (app *App) showSubmissionsHandler(w http.ResponseWriter, r *http.Request) {}

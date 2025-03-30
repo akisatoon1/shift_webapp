@@ -31,6 +31,8 @@ func main() {
 func routing(app *App) {
 	userManagementRouting(app)
 	shiftRequestRouting(app)
+	adminSubmissionRouting(app)
+	userRequestsRounting(app)
 }
 
 func userManagementRouting(app *App) {
@@ -52,8 +54,22 @@ func userManagementRouting(app *App) {
 }
 
 func shiftRequestRouting(app *App) {
-	http.HandleFunc("GET /admin/requests", app.adminMiddleware(app.showRequestsHandler))
+	http.HandleFunc("GET /admin/requests", app.adminMiddleware(app.adminShowRequestsHandler))
 	http.HandleFunc("GET /admin/requests/create", app.adminMiddleware(app.requestCreatePageHandler))
 	http.HandleFunc("POST /admin/requests", app.adminMiddleware(app.createRequestHandler))
 	// http.HandleFunc("GET /admin/requests/{request_id}")
+}
+
+func adminSubmissionRouting(app *App) {
+	http.HandleFunc("GET /admin/requests/{request_id}/submissions", app.adminMiddleware(app.adminShowSubmissionsHandler))
+	http.HandleFunc("GET /admin/requests/{request_id}/submissions/users/{user_id}", app.adminMiddleware(app.showUserSubmissionHandler))
+	// http.HandleFunc("GET /admin/requests/{request_id}/submissions/dates/{date}", app.adminMiddleware())
+}
+
+func userRequestsRounting(app *App) {
+	http.HandleFunc("GET /requests", app.showRequestsHandler)
+	// http.HandleFunc("GET /requests/{request_id}")
+	http.HandleFunc("GET /requests/{request_id}/submit", app.submissionPageHandler)
+	http.HandleFunc("POST /requests/{request_id}/submissions", app.submitShiftHandler)
+	http.HandleFunc("GET /requests/{request_id}/submissions", app.showSubmissionsHandler)
 }
