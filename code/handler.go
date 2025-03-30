@@ -8,12 +8,14 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 var (
 	errUserNotFound    = errors.New("user not found")
 	errSessionNotFound = errors.New("session not found")
 	errInvalidUserID   = errors.New("invalid user id")
+	errRequestNotFound = errors.New("request not found")
 )
 
 /*
@@ -260,7 +262,7 @@ func (app *App) adminShowRequestsHandler(w http.ResponseWriter, r *http.Request,
 	if err != nil {
 		responseServerError(w)
 	}
-	tmpl, err := template.ParseFiles("./html/admin/requests.html")
+	tmpl, _ := template.ParseFiles("./html/admin/requests.html")
 	tmpl.Execute(w, requests)
 }
 
@@ -286,14 +288,103 @@ func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr
 */
 
 func (app *App) adminShowSubmissionsHandler(w http.ResponseWriter, r *http.Request, usr user) {}
-func (app *App) showUserSubmissionHandler(w http.ResponseWriter, r *http.Request, usr user)   {}
+
+func (app *App) showUserSubmissionHandler(w http.ResponseWriter, r *http.Request, usr user) {
+
+}
 
 /*
 	user requests handler
 	ユーザのシフト提出に関する処理をするハンドラーたち。
 */
 
-func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request)    {}
-func (app *App) submissionPageHandler(w http.ResponseWriter, r *http.Request)  {}
-func (app *App) submitShiftHandler(w http.ResponseWriter, r *http.Request)     {}
+// userがシフト要請の一覧を見る
+func (app *App) showRequestsHandler(w http.ResponseWriter, r *http.Request) {
+	requests, err := app.getAllRequests()
+	if err != nil {
+		responseServerError(w)
+	}
+	tmpl, err := template.ParseFiles("./html/requests.html")
+	tmpl.Execute(w, requests)
+}
+
+func (app *App) submissionPageHandler(w http.ResponseWriter, r *http.Request) {
+	// check session
+	userID, err := app.getUserIDFromCookie(r)
+	if err != nil {
+		if err == errSessionNotFound {
+			redirectWithError(w, r, "/login", "ログインしてください")
+		} else {
+			responseServerError(w)
+		}
+		return
+	}
+
+	// get request
+	requestID := r.PathValue("request_id")
+	req, err := app.getRequest(requestID)
+	if err != nil {
+		if err == errRequestNotFound {
+			http.Error(w, "invalid request id", http.StatusBadRequest)
+		} else {
+			responseServerError(w)
+		}
+		return
+	}
+
+	// 提出済みかチェック
+	check, err := app.isAlreadySubmit(requestID, userID)
+	if check {
+		http.Error(w, "この要請は既に提出済みです。", http.StatusBadRequest)
+		return
+	}
+
+	// シフトの日付を得る
+	var dates []string
+	startDate, _ := time.Parse("2006-01-02", req.StartDate)
+	endDate, _ := time.Parse("2006-01-02", req.EndDate)
+	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
+		dates = append(dates, date.Format("2006-01-02"))
+	}
+
+	// シフトの選択できる時間帯を作成
+	var hours []string
+	for i := 9; i <= 22; i++ {
+		hours = append(hours, fmt.Sprintf("%v", i))
+	}
+
+	tmpl, _ := template.ParseFiles("./html/requests/request/submit.html")
+	tmpl.Execute(w, map[string][]string{"Dates": dates, "Hours": hours})
+}
+
+func (app *App) submitShiftHandler(w http.ResponseWriter, r *http.Request) {
+	// check session
+	userID, err := app.getUserIDFromCookie(r)
+	if err != nil {
+		if err == errSessionNotFound {
+			redirectWithError(w, r, "/login", "ログインしてください")
+		} else {
+			responseServerError(w)
+		}
+		return
+	}
+
+	requestID := r.PathValue("request_id")
+	r.ParseForm()
+	for submissionDate, hours := range r.Form {
+		submissionID, err := app.createSubmission(requestID, userID, submissionDate)
+		if err != nil {
+			responseServerError(w)
+			return
+		}
+		for _, hour := range hours {
+			err = app.createEntry(submissionID, hour)
+			if err != nil {
+				responseServerError(w)
+				return
+			}
+		}
+	}
+	http.Redirect(w, r, fmt.Sprintf("/requests/%v/submissions", requestID), http.StatusFound)
+}
 func (app *App) showSubmissionsHandler(w http.ResponseWriter, r *http.Request) {}

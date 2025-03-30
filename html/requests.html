@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<a href="/admin/home">home</a><br>
-<a href="/admin/requests/create">create requests</a><br>
+<a href="/home">home</a><br>
 
 <head>
     <title>要請一覧</title>
@@ -13,21 +12,21 @@
     <table>
         <thead>
             <tr>
-                <th>ID</th>
                 <th>ManagerID</th>
                 <th>開始日</th>
                 <th>終了日</th>
                 <th>作成日</th>
+                <th>submit url</th>
             </tr>
         </thead>
         <tbody>
             {{range .}}
             <tr>
-                <td>{{.ID}}</td>
                 <td>{{.ManagerID}}</td>
                 <td>{{.StartDate}}</td>
                 <td>{{.EndDate}}</td>
                 <td>{{.CreatedAt}}</td>
+                <td><a href="/requests/{{.ID}}/submit">submit shift</a></td>
             </tr>
             {{end}}
         </tbody>

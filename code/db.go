@@ -128,6 +128,18 @@ func (app *App) createRequest(manager_id string, start_date string, end_date str
 	return nil
 }
 
+func (app *App) getRequest(requestID string) (request, error) {
+	req := request{ID: requestID}
+	err := app.db.QueryRow("SELECT manager_id, start_date, end_date, created_at FROM shift_requests WHERE id = ?", req.ID).Scan(&req.ManagerID, &req.StartDate, &req.EndDate, &req.CreatedAt)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return request{}, logErr(err)
+		}
+		return request{}, errRequestNotFound
+	}
+	return req, nil
+}
+
 func (app *App) getAllRequests() ([]request, error) {
 	rows, err := app.db.Query("SELECT id, manager_id, start_date, end_date, created_at FROM shift_requests")
 	if err != nil {
@@ -147,4 +159,31 @@ func (app *App) getAllRequests() ([]request, error) {
 		return nil, logErr(err)
 	}
 	return requests, nil
+}
+
+func (app *App) isAlreadySubmit(requestID string, staffID string) (bool, error) {
+	var count int
+	err := app.db.QueryRow("SELECT COUNT(*) FROM shift_submissions WHERE request_id = ? AND staff_id = ?", requestID, staffID).Scan(&count)
+	if err != nil {
+		return false, logErr(err)
+	}
+	return count != 0, nil
+}
+
+func (app *App) createSubmission(requestID string, staffID string, submissionDate string) (string, error) {
+	id, _ := uuid.NewRandom()
+	_, err := app.db.Exec("INSERT INTO shift_submissions (id, request_id, staff_id, submission_date) VALUES (?, ?, ?, ?)", id, requestID, staffID, submissionDate)
+	if err != nil {
+		return "", logErr(err)
+	}
+	return id.String(), nil
+}
+
+func (app *App) createEntry(submissionID string, shiftHour string) error {
+	id, _ := uuid.NewRandom()
+	_, err := app.db.Exec("INSERT INTO shift_entries (id, submission_id, shift_hour) VALUES (?, ?, ?)", id, submissionID, shiftHour)
+	if err != nil {
+		return logErr(err)
+	}
+	return nil
 }
