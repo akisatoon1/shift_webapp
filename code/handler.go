@@ -354,7 +354,15 @@ func (app *App) submissionPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl, _ := template.ParseFiles("./html/requests/request/submit.html")
-	tmpl.Execute(w, map[string][]string{"Dates": dates, "Hours": hours})
+	tmpl.Execute(w, struct {
+		RequestID string
+		Dates     []string
+		Hours     []string
+	}{
+		RequestID: requestID,
+		Dates:     dates,
+		Hours:     hours,
+	})
 }
 
 func (app *App) submitShiftHandler(w http.ResponseWriter, r *http.Request) {

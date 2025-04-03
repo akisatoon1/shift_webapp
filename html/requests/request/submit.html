@@ -8,7 +8,7 @@
 
 <body>
     <h2>シフト提出フォーム</h2>
-    <form action=" /requests/{request_id}/submissions" method="post">
+    <form action=" /requests/{{.RequestID}}/submissions" method="post">
         {{range $date := .Dates}}
         <table>
             <caption>{{$date}}のシフト</caption>
