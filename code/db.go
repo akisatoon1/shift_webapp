@@ -24,6 +24,21 @@ type request struct {
 	CreatedAt string
 }
 
+type submission struct {
+	ID             string
+	RequestID      string
+	StaffID        string
+	SubmissionDate string
+	SubmittedAt    string
+}
+
+type entry struct {
+	ID           string
+	SubmissionID string
+	ShiftHour    int
+	CreatedAt    string
+}
+
 func logErr(err error) error {
 	log.Println("DB ERROR:", err)
 	return err
@@ -170,6 +185,27 @@ func (app *App) isAlreadySubmit(requestID string, staffID string) (bool, error) 
 	return count != 0, nil
 }
 
+func (app *App) getSubmissionsByID(requestID string, staffID string) ([]submission, error) {
+	rows, err := app.db.Query("SELECT id, request_id, staff_id, submission_date, submitted_at FROM shift_submissions WHERE request_id = ? AND staff_id = ?", requestID, staffID)
+	if err != nil {
+		return nil, logErr(err)
+	}
+	defer rows.Close()
+
+	var submissions []submission
+	for rows.Next() {
+		var sub submission
+		if err := rows.Scan(&sub.ID, &sub.RequestID, &sub.StaffID, &sub.SubmissionDate, &sub.SubmittedAt); err != nil {
+			return nil, logErr(err)
+		}
+		submissions = append(submissions, sub)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, logErr(err)
+	}
+	return submissions, nil
+}
+
 func (app *App) createSubmission(requestID string, staffID string, submissionDate string) (string, error) {
 	id, _ := uuid.NewRandom()
 	_, err := app.db.Exec("INSERT INTO shift_submissions (id, request_id, staff_id, submission_date) VALUES (?, ?, ?, ?)", id, requestID, staffID, submissionDate)
@@ -186,4 +222,25 @@ func (app *App) createEntry(submissionID string, shiftHour string) error {
 		return logErr(err)
 	}
 	return nil
+}
+
+func (app *App) getEntriesByID(submissionID string) ([]entry, error) {
+	rows, err := app.db.Query("SELECT id, submission_id, shift_hour, created_at FROM shift_entries WHERE submission_id = ?", submissionID)
+	if err != nil {
+		return nil, logErr(err)
+	}
+	defer rows.Close()
+
+	var entries []entry
+	for rows.Next() {
+		var ent entry
+		if err := rows.Scan(&ent.ID, &ent.SubmissionID, &ent.ShiftHour, &ent.CreatedAt); err != nil {
+			return nil, logErr(err)
+		}
+		entries = append(entries, ent)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, logErr(err)
+	}
+	return entries, nil
 }

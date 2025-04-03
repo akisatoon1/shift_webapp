@@ -17,6 +17,7 @@
                 <th>終了日</th>
                 <th>作成日</th>
                 <th>submit url</th>
+                <th>submissions</th>
             </tr>
         </thead>
         <tbody>
@@ -27,6 +28,7 @@
                 <td>{{.EndDate}}</td>
                 <td>{{.CreatedAt}}</td>
                 <td><a href="/requests/{{.ID}}/submit">submit shift</a></td>
+                <td><a href="/requests/{{.ID}}/submissions">シフト表</a></td>
             </tr>
             {{end}}
         </tbody>

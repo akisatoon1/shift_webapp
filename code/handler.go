@@ -395,4 +395,38 @@ func (app *App) submitShiftHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, fmt.Sprintf("/requests/%v/submissions", requestID), http.StatusFound)
 }
-func (app *App) showSubmissionsHandler(w http.ResponseWriter, r *http.Request) {}
+func (app *App) showSubmissionsHandler(w http.ResponseWriter, r *http.Request) {
+	// check session
+	userID, err := app.getUserIDFromCookie(r)
+	if err != nil {
+		if err == errSessionNotFound {
+			redirectWithError(w, r, "/login", "ログインしてください")
+		} else {
+			responseServerError(w)
+		}
+		return
+	}
+
+	requestID := r.PathValue("request_id")
+	shift := make(map[string][]int)
+	submissions, err := app.getSubmissionsByID(requestID, userID)
+	if err != nil {
+		responseServerError(w)
+		return
+	}
+	for _, sub := range submissions {
+		entries, err := app.getEntriesByID(sub.ID)
+		if err != nil {
+			responseServerError(w)
+			return
+		}
+		var hours []int
+		for _, ent := range entries {
+			hours = append(hours, ent.ShiftHour)
+		}
+		shift[sub.SubmissionDate] = hours
+	}
+
+	tmpl, err := template.ParseFiles("./html/requests/request/submissions.html")
+	tmpl.Execute(w, shift)
+}
