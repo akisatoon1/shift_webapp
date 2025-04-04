@@ -39,6 +39,36 @@ type entry struct {
 	CreatedAt    string
 }
 
+/*
+	database api の一覧
+
+	規則: createは必ずidを返す
+
+	// user
+	createUser(user) (string, error)
+	getUser(string) (user, error)
+	getAllUsers() ([]user, error)
+	getUserIDFromSessionID(string) (string, error)
+	deleteUser(string) error
+
+	// session
+	createSession(string) (string, error)
+	deleteSession(string) error
+
+	// request
+	createRequest(string, string, string) (string, error)
+	getRequest(string) (request, error)
+	getAllRequests() ([]request, error)
+
+	// submission
+	createSubmission(string, string, string) (string, error)
+	getSubmissionsByRequestAndUserID(string, string) ([]submission, error)
+
+	// entry
+	createEntry(string, int) (string, error)
+	getEntriesBySubmissionID(string) ([]entry, error)
+*/
+
 func logErr(err error) error {
 	log.Println("DB ERROR:", err)
 	return err
@@ -77,15 +107,15 @@ func (app *App) getAllUsers() ([]user, error) {
 	return users, nil
 }
 
-func (app *App) createUser(u user) error {
+func (app *App) createUser(u user) (string, error) {
 	_, err := app.db.Exec("INSERT INTO users (id, password, role) VALUES (?, ?, ?)", u.ID, u.Password, RoleEmployee)
 	if err != nil {
 		if sqlite3Err, ok := err.(sqlite3.Error); ok && sqlite3Err.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
-			return errInvalidUserID
+			return "", errInvalidUserID
 		}
-		return logErr(err)
+		return "", logErr(err)
 	}
-	return nil
+	return u.ID, nil
 }
 
 func (app *App) deleteUser(userID string) error {
@@ -98,6 +128,12 @@ func (app *App) deleteUser(userID string) error {
 
 // sessionID, error
 func (app *App) createSession(userID string) (string, error) {
+	generateSessionID := func() string {
+		b := make([]byte, 32)
+		rand.Read(b)
+		return base64.URLEncoding.EncodeToString(b)
+	}
+
 	sessionID := generateSessionID()
 	_, err := app.db.Exec("INSERT INTO sessions (id, user_id) VALUES (?, ?)", sessionID, userID)
 	if err != nil {
@@ -116,7 +152,7 @@ func (app *App) deleteSession(sessionID string) error {
 
 // sessionIDに紐づいたuserIDを探す
 // userID, error
-func (app *App) getUserIDFromSession(sessionID string) (string, error) {
+func (app *App) getUserIDFromSessionID(sessionID string) (string, error) {
 	var userID string
 	err := app.db.QueryRow("SELECT user_id FROM sessions WHERE id = ?", sessionID).Scan(&userID)
 	if err != nil {
@@ -128,19 +164,13 @@ func (app *App) getUserIDFromSession(sessionID string) (string, error) {
 	return userID, nil
 }
 
-func generateSessionID() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
-}
-
-func (app *App) createRequest(manager_id string, start_date string, end_date string) error {
+func (app *App) createRequest(manager_id string, start_date string, end_date string) (string, error) {
 	id, _ := uuid.NewRandom()
 	_, err := app.db.Exec("INSERT INTO shift_requests (id, manager_id, start_date, end_date) VALUES (?, ?, ?, ?)", id, manager_id, start_date, end_date)
 	if err != nil {
-		return logErr(err)
+		return "", logErr(err)
 	}
-	return nil
+	return id.String(), nil
 }
 
 func (app *App) getRequest(requestID string) (request, error) {
@@ -176,16 +206,7 @@ func (app *App) getAllRequests() ([]request, error) {
 	return requests, nil
 }
 
-func (app *App) isAlreadySubmit(requestID string, staffID string) (bool, error) {
-	var count int
-	err := app.db.QueryRow("SELECT COUNT(*) FROM shift_submissions WHERE request_id = ? AND staff_id = ?", requestID, staffID).Scan(&count)
-	if err != nil {
-		return false, logErr(err)
-	}
-	return count != 0, nil
-}
-
-func (app *App) getSubmissionsByID(requestID string, staffID string) ([]submission, error) {
+func (app *App) getSubmissionsByRequestAndUserID(requestID string, staffID string) ([]submission, error) {
 	rows, err := app.db.Query("SELECT id, request_id, staff_id, submission_date, submitted_at FROM shift_submissions WHERE request_id = ? AND staff_id = ?", requestID, staffID)
 	if err != nil {
 		return nil, logErr(err)
@@ -215,16 +236,16 @@ func (app *App) createSubmission(requestID string, staffID string, submissionDat
 	return id.String(), nil
 }
 
-func (app *App) createEntry(submissionID string, shiftHour string) error {
+func (app *App) createEntry(submissionID string, shiftHour string) (string, error) {
 	id, _ := uuid.NewRandom()
 	_, err := app.db.Exec("INSERT INTO shift_entries (id, submission_id, shift_hour) VALUES (?, ?, ?)", id, submissionID, shiftHour)
 	if err != nil {
-		return logErr(err)
+		return "", logErr(err)
 	}
-	return nil
+	return id.String(), nil
 }
 
-func (app *App) getEntriesByID(submissionID string) ([]entry, error) {
+func (app *App) getEntriesBySubmissionID(submissionID string) ([]entry, error) {
 	rows, err := app.db.Query("SELECT id, submission_id, shift_hour, created_at FROM shift_entries WHERE submission_id = ?", submissionID)
 	if err != nil {
 		return nil, logErr(err)

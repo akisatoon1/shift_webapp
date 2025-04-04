@@ -184,7 +184,7 @@ func (app *App) adminRegisterHandler(w http.ResponseWriter, r *http.Request, usr
 		hash := sha256.Sum256([]byte(password))
 		hashedPassword := base64.URLEncoding.EncodeToString(hash[:])
 
-		err := app.createUser(user{ID: userID, Password: hashedPassword})
+		_, err := app.createUser(user{ID: userID, Password: hashedPassword})
 		if err != nil {
 			if err == errInvalidUserID {
 				http.Error(w, "無効なuser idです", http.StatusBadRequest)
@@ -235,7 +235,7 @@ func (app *App) getUserIDFromCookie(r *http.Request) (string, error) {
 		return "", errSessionNotFound
 	}
 
-	userID, err := app.getUserIDFromSession(cookie.Value)
+	userID, err := app.getUserIDFromSessionID(cookie.Value)
 	if err != nil {
 		return "", err
 	}
@@ -274,7 +274,7 @@ func (app *App) requestCreatePageHandler(w http.ResponseWriter, r *http.Request,
 func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr user) {
 	start_date := r.FormValue("start_date")
 	end_date := r.FormValue("end_date")
-	err := app.createRequest(usr.ID, start_date, end_date)
+	_, err := app.createRequest(usr.ID, start_date, end_date)
 	if err != nil {
 		responseServerError(w)
 		return
@@ -333,8 +333,8 @@ func (app *App) submissionPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 提出済みかチェック
-	check, err := app.isAlreadySubmit(requestID, userID)
-	if check {
+	subs, err := app.getSubmissionsByRequestAndUserID(requestID, userID)
+	if len(subs) > 0 {
 		http.Error(w, "この要請は既に提出済みです。", http.StatusBadRequest)
 		return
 	}
@@ -386,7 +386,7 @@ func (app *App) submitShiftHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for _, hour := range hours {
-			err = app.createEntry(submissionID, hour)
+			_, err = app.createEntry(submissionID, hour)
 			if err != nil {
 				responseServerError(w)
 				return
@@ -409,13 +409,13 @@ func (app *App) showSubmissionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	requestID := r.PathValue("request_id")
 	shift := make(map[string][]int)
-	submissions, err := app.getSubmissionsByID(requestID, userID)
+	submissions, err := app.getSubmissionsByRequestAndUserID(requestID, userID)
 	if err != nil {
 		responseServerError(w)
 		return
 	}
 	for _, sub := range submissions {
-		entries, err := app.getEntriesByID(sub.ID)
+		entries, err := app.getEntriesBySubmissionID(sub.ID)
 		if err != nil {
 			responseServerError(w)
 			return
