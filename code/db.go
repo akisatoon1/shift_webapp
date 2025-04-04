@@ -63,6 +63,7 @@ type entry struct {
 	// submission
 	createSubmission(string, string, string) (string, error)
 	getSubmissionsByRequestID(string) ([]submission, error)
+	getSubmissionsByRequestIDAndDate(string string) ([]submission, error)
 	getSubmissionsByRequestAndUserID(string, string) ([]submission, error)
 
 	// entry
@@ -209,6 +210,27 @@ func (app *App) getAllRequests() ([]request, error) {
 
 func (app *App) getSubmissionsByRequestID(requestID string) ([]submission, error) {
 	rows, err := app.db.Query("SELECT id, request_id, staff_id, submission_date, submitted_at FROM shift_submissions WHERE request_id = ?", requestID)
+	if err != nil {
+		return nil, logErr(err)
+	}
+	defer rows.Close()
+
+	var submissions []submission
+	for rows.Next() {
+		var sub submission
+		if err := rows.Scan(&sub.ID, &sub.RequestID, &sub.StaffID, &sub.SubmissionDate, &sub.SubmittedAt); err != nil {
+			return nil, logErr(err)
+		}
+		submissions = append(submissions, sub)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, logErr(err)
+	}
+	return submissions, nil
+}
+
+func (app *App) getSubmissionsByRequestIDAndDate(requestID string, date string) ([]submission, error) {
+	rows, err := app.db.Query("SELECT id, request_id, staff_id, submission_date, submitted_at FROM shift_submissions WHERE request_id = ? AND submission_date = ?", requestID, date)
 	if err != nil {
 		return nil, logErr(err)
 	}

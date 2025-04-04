@@ -353,6 +353,32 @@ func (app *App) showUserSubmissionHandler(w http.ResponseWriter, r *http.Request
 	}{userID, shift})
 }
 
+func (app *App) showDateSubmissionHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	date := r.PathValue("date")
+	requestID := r.PathValue("request_id")
+	subs, err := app.getSubmissionsByRequestIDAndDate(requestID, date)
+	if err != nil {
+		responseServerError(w)
+		return
+	}
+
+	userSubmit := make(map[string][]entry) // userid => []entry
+	for _, sub := range subs {
+		ents, err := app.getEntriesBySubmissionID(sub.ID)
+		if err != nil {
+			responseServerError(w)
+			return
+		}
+		userSubmit[sub.StaffID] = ents
+	}
+
+	tmpl, err := template.ParseFiles("./html/admin/requests/request/submissions/dates/date.html")
+	tmpl.Execute(w, struct {
+		Date      string
+		UserShift map[string][]entry
+	}{date, userSubmit})
+}
+
 /*
 	user requests handler
 	ユーザのシフト提出に関する処理をするハンドラーたち。

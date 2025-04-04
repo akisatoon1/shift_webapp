@@ -63,7 +63,7 @@ func shiftRequestRouting(app *App) {
 func adminSubmissionRouting(app *App) {
 	http.HandleFunc("GET /admin/requests/{request_id}/submissions", app.adminMiddleware(app.adminShowSubmissionsHandler))
 	http.HandleFunc("GET /admin/requests/{request_id}/submissions/users/{user_id}", app.adminMiddleware(app.showUserSubmissionHandler))
-	// http.HandleFunc("GET /admin/requests/{request_id}/submissions/dates/{date}", app.adminMiddleware())
+	http.HandleFunc("GET /admin/requests/{request_id}/submissions/dates/{date}", app.adminMiddleware(app.showDateSubmissionHandler))
 }
 
 func userRequestsRounting(app *App) {
