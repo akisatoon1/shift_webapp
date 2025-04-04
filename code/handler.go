@@ -325,7 +325,32 @@ func (app *App) adminShowSubmissionsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *App) showUserSubmissionHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	userID := r.PathValue("user_id")
+	requestID := r.PathValue("request_id")
+	shift := make(map[string][]int)
+	submissions, err := app.getSubmissionsByRequestAndUserID(requestID, userID)
+	if err != nil {
+		responseServerError(w)
+		return
+	}
+	for _, sub := range submissions {
+		entries, err := app.getEntriesBySubmissionID(sub.ID)
+		if err != nil {
+			responseServerError(w)
+			return
+		}
+		var hours []int
+		for _, ent := range entries {
+			hours = append(hours, ent.ShiftHour)
+		}
+		shift[sub.SubmissionDate] = hours
+	}
 
+	tmpl, err := template.ParseFiles("./html/admin/requests/request/submissions/users/user.html")
+	tmpl.Execute(w, struct {
+		UserID string
+		Shift  map[string][]int
+	}{userID, shift})
 }
 
 /*

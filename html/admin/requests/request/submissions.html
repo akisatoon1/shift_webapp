@@ -10,14 +10,14 @@
     <h1>ユーザーIDリスト</h1>
     <ul>
         {{range .UserIDs}}
-        <li>{{.}}</li>
+        <li><a href="./submissions/users/{{.}}">{{.}}</a></li>
         {{end}}
     </ul>
 
     <h1>日付リスト</h1>
     <ul>
         {{range .Dates}}
-        <li>{{.}}</li>
+        <li><a href="./submissions/dates/{{.}}">{{.}}</a></li>
         {{end}}
     </ul>
 </body>
