@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>シフト表</title>
+</head>
+
+<body>
+    <h1>ユーザーIDリスト</h1>
+    <ul>
+        {{range .UserIDs}}
+        <li>{{.}}</li>
+        {{end}}
+    </ul>
+
+    <h1>日付リスト</h1>
+    <ul>
+        {{range .Dates}}
+        <li>{{.}}</li>
+        {{end}}
+    </ul>
+</body>
+
+</html>

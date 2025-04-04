@@ -287,7 +287,42 @@ func (app *App) createRequestHandler(w http.ResponseWriter, r *http.Request, usr
 	管理者アカウントの提出されたシフトに対する処理をするハンドラーたち。
 */
 
-func (app *App) adminShowSubmissionsHandler(w http.ResponseWriter, r *http.Request, usr user) {}
+func (app *App) adminShowSubmissionsHandler(w http.ResponseWriter, r *http.Request, usr user) {
+	requestID := r.PathValue("request_id")
+	subs, err := app.getSubmissionsByRequestID(requestID)
+	if err != nil {
+		responseServerError(w)
+		return
+	}
+
+	// 一意なuserid
+	// 一意なdate
+	// これらを集める
+	setUserIDs := make(map[string]int)
+	setDates := make(map[string]int)
+	for _, sub := range subs {
+		setUserIDs[sub.StaffID] = 0
+		setDates[sub.SubmissionDate] = 0
+	}
+
+	// 一意なuserid
+	var userIDs []string
+	for userID := range setUserIDs {
+		userIDs = append(userIDs, userID)
+	}
+
+	// 一意なdate
+	var dates []string
+	for date := range setDates {
+		dates = append(dates, date)
+	}
+
+	tmpl, err := template.ParseFiles("./html/admin/requests/request/submissions.html")
+	tmpl.Execute(w, map[string][]string{
+		"UserIDs": userIDs,
+		"Dates":   dates,
+	})
+}
 
 func (app *App) showUserSubmissionHandler(w http.ResponseWriter, r *http.Request, usr user) {
 
