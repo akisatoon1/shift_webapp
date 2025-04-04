@@ -18,6 +18,7 @@
                 <th>開始日</th>
                 <th>終了日</th>
                 <th>作成日</th>
+                <th>シフト表一覧url</th>
             </tr>
         </thead>
         <tbody>
@@ -28,6 +29,7 @@
                 <td>{{.StartDate}}</td>
                 <td>{{.EndDate}}</td>
                 <td>{{.CreatedAt}}</td>
+                <td><a href="/admin/requests/{{.ID}}/submissions">シフト表一覧</a></td>
             </tr>
             {{end}}
         </tbody>
