@@ -27,6 +27,7 @@
     "creator": {後で入れる},
     "start_date": string,
     "end_date": string,
+    "deadline": string,
     "created_at": string
 }[]
 ```
