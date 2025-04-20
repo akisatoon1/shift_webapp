@@ -39,6 +39,7 @@
 {
     "start_date": string  // 開始日
     "end_date": string    // 終了日
+    "deadline": string    // 提出の期限
 }
 ```
 #### Reponse body
@@ -55,6 +56,7 @@
 {
     "id": number,
     "entries": {
+        "id": number,
         "user": {後で入れる},
         "date": string,
         "hour": number
