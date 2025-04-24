@@ -49,7 +49,7 @@
 }
 ```
 
-### GET /requests/{request_id}/submissions
+### GET /requests/{request_id}/entries
 **提出されたシフトエントリーの一覧を返す**
 #### Response body
 ```
@@ -64,7 +64,7 @@
 }[]
 ```
 
-### POST /requests/{request_id}/submissions
+### POST /requests/{request_id}/entries
 **新しいシフトエントリーを提出(追加)して、新しいIDを返す**
 #### Request body
 ```
