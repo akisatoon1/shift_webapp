@@ -1,3 +1,13 @@
+-- ユーザーテーブル
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    login_id TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    name TEXT NOT NULL,
+    role INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime'))
+);
+
 -- リクエストテーブル
 CREATE TABLE IF NOT EXISTS requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
