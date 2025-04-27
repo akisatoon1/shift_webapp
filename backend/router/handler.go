@@ -2,6 +2,7 @@ package router
 
 import (
 	"backend/context"
+	"backend/model"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -12,7 +13,7 @@ type handler struct {
 }
 
 func (h *handler) getRequestsRequest(w http.ResponseWriter, r *http.Request) {
-	requests, err := h.ctx.DB.GetRequests()
+	requests, err := model.GetRequests(h.ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -28,7 +29,7 @@ func (h *handler) getEntriesRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := h.ctx.DB.GetEntriesByRequestID(requestIdInt)
+	entries, err := model.GetEntries(h.ctx, requestIdInt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
