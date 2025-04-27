@@ -60,11 +60,15 @@ func initMockDB() *mockDB {
 	}
 }
 
-func TestGetRequests(t *testing.T) {
-	// テストデータ
-	mock := initMockDB()
+// 新たなテスト用コンテキストを作成
+func newTestContext() *context.AppContext {
+	return &context.AppContext{
+		DB: initMockDB(),
+	}
+}
 
-	ctx := &context.AppContext{DB: mock}
+func TestGetRequests(t *testing.T) {
+	ctx := newTestContext()
 
 	got, err := GetRequests(ctx)
 	if err != nil {
@@ -82,10 +86,7 @@ func TestGetRequests(t *testing.T) {
 }
 
 func TestGetEntries(t *testing.T) {
-	// テストデータ
-	mock := initMockDB()
-
-	ctx := &context.AppContext{DB: mock}
+	ctx := newTestContext()
 
 	got, err := GetEntries(ctx, 1)
 	if err != nil {
