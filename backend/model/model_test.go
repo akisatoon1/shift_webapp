@@ -39,31 +39,30 @@ func (m *mockDB) GetEntriesByRequestID(requestID int) ([]db.Entry, error) {
 	return entries, nil
 }
 
-func TestGetRequests(t *testing.T) {
-	// テストデータ
+// モックDBを初期化
+func initMockDB() *mockDB {
 	testTime := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
-	mock := &mockDB{
+	return &mockDB{
 		Requests: []db.Request{
-			{
-				ID:        1,
-				CreatorID: 1,
-				StartDate: testTime,
-				EndDate:   testTime,
-				Deadline:  testTime,
-				CreatedAt: testTime,
-			},
+			{ID: 1, CreatorID: 2, StartDate: testTime, EndDate: testTime, Deadline: testTime, CreatedAt: testTime},
+			{ID: 2, CreatorID: 2, StartDate: testTime, EndDate: testTime, Deadline: testTime, CreatedAt: testTime},
 		},
 		Users: []db.User{
-			{
-				ID:        1,
-				LoginID:   "test_user",
-				Password:  "password",
-				Name:      "テストユーザー",
-				Role:      0,
-				CreatedAt: testTime,
-			},
+			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー", Role: 0, CreatedAt: testTime},
+			{ID: 2, LoginID: "test_manager", Password: "password2", Name: "テストマネージャー", Role: 1, CreatedAt: testTime},
+		},
+		Entries: []db.Entry{
+			{ID: 1, RequestID: 1, UserID: 1, Date: testTime, Hour: 8},
+			{ID: 2, RequestID: 1, UserID: 2, Date: testTime, Hour: 8},
+			{ID: 3, RequestID: 2, UserID: 1, Date: testTime, Hour: 8},
+			{ID: 4, RequestID: 2, UserID: 2, Date: testTime, Hour: 8},
 		},
 	}
+}
+
+func TestGetRequests(t *testing.T) {
+	// テストデータ
+	mock := initMockDB()
 
 	ctx := &context.AppContext{DB: mock}
 
@@ -73,14 +72,8 @@ func TestGetRequests(t *testing.T) {
 	}
 
 	want := GetRequestsResponse{
-		Request{
-			ID:        1,
-			Creator:   User{ID: 1, Name: "テストユーザー"},
-			StartDate: "2024-06-01",
-			EndDate:   "2024-06-01",
-			Deadline:  "2024-06-01",
-			CreatedAt: "2024-06-01",
-		},
+		Request{ID: 1, Creator: User{ID: 2, Name: "テストマネージャー"}, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01", CreatedAt: "2024-06-01"},
+		Request{ID: 2, Creator: User{ID: 2, Name: "テストマネージャー"}, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01", CreatedAt: "2024-06-01"},
 	}
 
 	if !reflect.DeepEqual(got, want) {
@@ -90,40 +83,20 @@ func TestGetRequests(t *testing.T) {
 
 func TestGetEntries(t *testing.T) {
 	// テストデータ
-	testTime := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
-	mock := &mockDB{
-		Users: []db.User{
-			{
-				ID:        1,
-				LoginID:   "test_user",
-				Password:  "password",
-				Name:      "テストユーザー",
-				Role:      0,
-				CreatedAt: testTime,
-			},
-		},
-		Entries: []db.Entry{
-			{
-				ID:        2,
-				RequestID: 3,
-				UserID:    1,
-				Date:      testTime,
-				Hour:      8,
-			},
-		},
-	}
+	mock := initMockDB()
 
 	ctx := &context.AppContext{DB: mock}
 
-	got, err := GetEntries(ctx, 3)
+	got, err := GetEntries(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	want := GetEntriesResponse{
-		ID: 3,
+		ID: 1,
 		Entries: []Entry{
-			{ID: 2, User: User{ID: 1, Name: "テストユーザー"}, Date: "2024-06-01", Hour: 8},
+			{ID: 1, User: User{ID: 1, Name: "テストユーザー"}, Date: "2024-06-01", Hour: 8},
+			{ID: 2, User: User{ID: 2, Name: "テストマネージャー"}, Date: "2024-06-01", Hour: 8},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
