@@ -4,6 +4,7 @@ import (
 	"backend/context"
 	"backend/db"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -71,9 +72,19 @@ func TestGetRequests(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := `[{"id":1,"creator":{"id":1,"name":"テストユーザー"},"start_date":"2024-06-01","end_date":"2024-06-01","deadline":"2024-06-01","created_at":"2024-06-01"}]`
-	if got != want {
-		t.Errorf("got %s, want %s", got, want)
+	want := GetRequestsResponse{
+		Request{
+			ID:        1,
+			Creator:   User{ID: 1, Name: "テストユーザー"},
+			StartDate: "2024-06-01",
+			EndDate:   "2024-06-01",
+			Deadline:  "2024-06-01",
+			CreatedAt: "2024-06-01",
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
@@ -109,8 +120,13 @@ func TestGetEntries(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := `{"id":3,"entries":[{"id":2,"user":{"id":1,"name":"テストユーザー"},"date":"2024-06-01","hour":8}]}`
-	if got != want {
-		t.Errorf("got %s, want %s", got, want)
+	want := GetEntriesResponse{
+		ID: 3,
+		Entries: []Entry{
+			{ID: 2, User: User{ID: 1, Name: "テストユーザー"}, Date: "2024-06-01", Hour: 8},
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
