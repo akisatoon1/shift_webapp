@@ -40,7 +40,7 @@ func main() {
 	appCtx := context.NewAppContext(db)
 
 	// ルーティングの設定
-	router.Routing(appCtx)
+	router.Routes(appCtx)
 
 	// サーバーの起動
 	log.Println("サーバーを起動します: http://localhost:" + port)
