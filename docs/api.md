@@ -24,7 +24,10 @@
 ```
 {
     "id": number,
-    "creator": {後で入れる},
+    "creator": {
+        "id": number,
+        "name": string
+    },
     "start_date": string,
     "end_date": string,
     "deadline": string,
@@ -57,7 +60,10 @@
     "id": number,
     "entries": {
         "id": number,
-        "user": {後で入れる},
+        "user": {
+            "id": number,
+            "name": string
+        },
         "date": string,
         "hour": number
     }[]
