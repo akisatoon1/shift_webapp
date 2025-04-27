@@ -12,6 +12,7 @@ import (
 type mockDB struct {
 	Requests []db.Request
 	Users    []db.User
+	Entries  []db.Entry
 }
 
 func (m *mockDB) GetRequests() ([]db.Request, error) {
@@ -28,7 +29,13 @@ func (m *mockDB) GetUserByID(id int) (db.User, error) {
 }
 
 func (m *mockDB) GetEntriesByRequestID(requestID int) ([]db.Entry, error) {
-	return []db.Entry{}, nil
+	entries := []db.Entry{}
+	for _, entry := range m.Entries {
+		if entry.RequestID == requestID {
+			entries = append(entries, entry)
+		}
+	}
+	return entries, nil
 }
 
 func TestGetRequests(t *testing.T) {
@@ -65,6 +72,44 @@ func TestGetRequests(t *testing.T) {
 	}
 
 	want := `[{"id":1,"creator":{"id":1,"name":"テストユーザー"},"start_date":"2024-06-01","end_date":"2024-06-01","deadline":"2024-06-01","created_at":"2024-06-01"}]`
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}
+
+func TestGetEntries(t *testing.T) {
+	// テストデータ
+	testTime := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+	mock := &mockDB{
+		Users: []db.User{
+			{
+				ID:        1,
+				LoginID:   "test_user",
+				Password:  "password",
+				Name:      "テストユーザー",
+				Role:      0,
+				CreatedAt: testTime,
+			},
+		},
+		Entries: []db.Entry{
+			{
+				ID:        2,
+				RequestID: 3,
+				UserID:    1,
+				Date:      testTime,
+				Hour:      8,
+			},
+		},
+	}
+
+	ctx := &context.AppContext{DB: mock}
+
+	got, err := GetEntries(ctx, 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := `{"id":3,"entries":[{"id":2,"user":{"id":1,"name":"テストユーザー"},"date":"2024-06-01","hour":8}]}`
 	if got != want {
 		t.Errorf("got %s, want %s", got, want)
 	}

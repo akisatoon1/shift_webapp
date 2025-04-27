@@ -49,3 +49,43 @@ func GetRequests(ctx *context.AppContext) (string, error) {
 	json, _ := json.Marshal(response)
 	return string(json), nil
 }
+
+func GetEntries(ctx *context.AppContext, requestID int) (string, error) {
+	type ResponseEntry struct {
+		ID   int `json:"id"`
+		User struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"user"`
+		Date string `json:"date"`
+		Hour int    `json:"hour"`
+	}
+	response := struct {
+		ID      int             `json:"id"`
+		Entries []ResponseEntry `json:"entries"`
+	}{ID: requestID}
+
+	entries, err := ctx.DB.GetEntriesByRequestID(requestID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+		user, err := ctx.DB.GetUserByID(entry.UserID)
+		if err != nil {
+			return "", err
+		}
+		response.Entries = append(response.Entries, ResponseEntry{
+			ID: entry.ID,
+			User: struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			}{user.ID, user.Name},
+			Date: entry.Date.Format("2006-01-02"),
+			Hour: entry.Hour,
+		})
+	}
+
+	json, _ := json.Marshal(response)
+	return string(json), nil
+}
