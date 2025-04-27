@@ -5,6 +5,16 @@ import (
 	"time"
 )
 
+
+type User struct {
+	ID int
+	LoginID string
+	Password string
+	Name string
+	Role int
+	CreatedAt time.Time
+}
+
 type Request struct {
 	ID int
 	CreatorID int
@@ -23,6 +33,7 @@ type Entry struct {
 }
 
 type DB interface {
+	GetUserByID(id int) (User, error)
 	GetRequests() ([]Request, error)
 	GetEntriesByRequestID(requestID int) ([]Entry, error)
 }
