@@ -6,6 +6,7 @@ package model
 
 import (
 	"backend/context"
+	"time"
 )
 
 // APIレスポンスのcreatorやuserフィールドで利用される
@@ -47,10 +48,10 @@ func GetRequests(ctx *context.AppContext) (GetRequestsResponse, error) {
 		response = append(response, Request{
 			ID:        request.ID,
 			Creator:   User{ID: user.ID, Name: user.Name},
-			StartDate: request.StartDate.Format("2006-01-02"),
-			EndDate:   request.EndDate.Format("2006-01-02"),
-			Deadline:  request.Deadline.Format("2006-01-02"),
-			CreatedAt: request.CreatedAt.Format("2006-01-02"),
+			StartDate: request.StartDate.Format(time.DateOnly),
+			EndDate:   request.EndDate.Format(time.DateOnly),
+			Deadline:  request.Deadline.Format(time.DateOnly),
+			CreatedAt: request.CreatedAt.Format(time.DateTime),
 		})
 	}
 
@@ -94,7 +95,7 @@ func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, err
 		response.Entries = append(response.Entries, Entry{
 			ID:   entry.ID,
 			User: User{ID: user.ID, Name: user.Name},
-			Date: entry.Date.Format("2006-01-02"),
+			Date: entry.Date.Format(time.DateOnly),
 			Hour: entry.Hour,
 		})
 	}

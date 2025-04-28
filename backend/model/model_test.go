@@ -23,8 +23,8 @@ func TestGetRequests(t *testing.T) {
 	}
 
 	want := GetRequestsResponse{
-		Request{ID: 1, Creator: User{ID: 2, Name: "テストマネージャー"}, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01", CreatedAt: "2024-06-01"},
-		Request{ID: 2, Creator: User{ID: 2, Name: "テストマネージャー"}, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01", CreatedAt: "2024-06-01"},
+		Request{ID: 1, Creator: User{ID: 2, Name: "テストマネージャー"}, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01", CreatedAt: "2024-06-01 00:00:00"},
+		Request{ID: 2, Creator: User{ID: 2, Name: "テストマネージャー"}, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01", CreatedAt: "2024-06-01 00:00:00"},
 	}
 
 	if !reflect.DeepEqual(got, want) {

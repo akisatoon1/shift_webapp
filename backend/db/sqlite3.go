@@ -36,7 +36,7 @@ func (db *Sqlite3DB) GetUserByID(id int) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	user.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+	user.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
 	return user, nil
 }
 
@@ -56,10 +56,10 @@ func (db *Sqlite3DB) GetRequests() ([]Request, error) {
 		if err != nil {
 			return nil, err
 		}
-		req.StartDate, _ = time.Parse("2006-01-02 15:04:05", startDate)
-		req.EndDate, _ = time.Parse("2006-01-02 15:04:05", endDate)
-		req.Deadline, _ = time.Parse("2006-01-02 15:04:05", deadline)
-		req.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+		req.StartDate, _ = time.Parse(time.DateTime, startDate)
+		req.EndDate, _ = time.Parse(time.DateTime, endDate)
+		req.Deadline, _ = time.Parse(time.DateTime, deadline)
+		req.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
 		requests = append(requests, req)
 	}
 	return requests, nil
@@ -81,7 +81,7 @@ func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 		if err != nil {
 			return nil, err
 		}
-		entry.Date, _ = time.Parse("2006-01-02 15:04:05", date)
+		entry.Date, _ = time.Parse(time.DateTime, date)
 		entries = append(entries, entry)
 	}
 	return entries, nil
