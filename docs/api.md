@@ -3,6 +3,10 @@
 ## ベースURL
 `http://localhost:3000/api`
 
+## Header
+- `Authorization`
+- `Content-Type: application/json`
+
 ## 認証
 全てのエンドポイントでトークンが必要.
 
@@ -15,6 +19,11 @@
     "error": string
 }
 ```
+
+## ステータスコード
+### 成功時
+- GET: `200`
+- POST: `201`
 
 ## エンドポイント一覧
 
