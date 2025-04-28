@@ -51,7 +51,7 @@ func TestGetRequestsHandler(t *testing.T) {
 			"start_date": "2024-06-01",
 			"end_date": "2024-06-01",
 			"deadline": "2024-06-01",
-			"created_at": "2024-06-01"
+			"created_at": "2024-06-01 00:00:00"
 		},
 		{
 			"id": 2,
@@ -59,7 +59,7 @@ func TestGetRequestsHandler(t *testing.T) {
 			"start_date": "2024-06-01",
 			"end_date": "2024-06-01",
 			"deadline": "2024-06-01",
-			"created_at": "2024-06-01"
+			"created_at": "2024-06-01 00:00:00"
 		}
 	]
 	`
