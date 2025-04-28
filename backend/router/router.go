@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-func Routes(ctx *context.AppContext) {
+func Routes(mux *http.ServeMux, ctx *context.AppContext) {
 	hdlr := &handler{ctx: ctx}
 
-	http.HandleFunc("GET /requests", hdlr.getRequestsRequest)
-	http.HandleFunc("GET /requests/{id}/entries", hdlr.getEntriesRequest)
+	mux.HandleFunc("GET /requests", hdlr.getRequestsRequest)
+	mux.HandleFunc("GET /requests/{id}/entries", hdlr.getEntriesRequest)
 }

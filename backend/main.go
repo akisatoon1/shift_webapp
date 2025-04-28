@@ -40,9 +40,10 @@ func main() {
 	appCtx := context.NewAppContext(db)
 
 	// ルーティングの設定
-	router.Routes(appCtx)
+	mux := http.NewServeMux()
+	router.Routes(mux, appCtx)
 
 	// サーバーの起動
 	log.Println("サーバーを起動します: http://localhost:" + port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }

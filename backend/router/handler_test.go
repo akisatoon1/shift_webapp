@@ -21,11 +21,8 @@ func newTestContext() *context.AppContext {
 }
 
 func setupTestMux(appCtx *context.AppContext) *http.ServeMux {
-	hdlr := &handler{ctx: appCtx}
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("/requests", hdlr.getRequestsRequest)
-	mux.HandleFunc("/requests/{id}/entries", hdlr.getEntriesRequest)
+	Routes(mux, appCtx)
 	return mux
 }
 
