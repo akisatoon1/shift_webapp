@@ -8,6 +8,9 @@ import (
 	"strconv"
 )
 
+// TODO
+// content-typeのバリデーション
+
 type handler struct {
 	ctx *context.AppContext
 }
@@ -35,4 +38,10 @@ func (h *handler) getEntriesRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(entries)
+}
+
+func (h *handler) postRequestsRequest(w http.ResponseWriter, r *http.Request) {
+	// 入力値形式のバリデーション
+	// モデルに渡す
+	// レスポンス
 }

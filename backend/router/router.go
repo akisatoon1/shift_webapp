@@ -10,4 +10,5 @@ func Routes(mux *http.ServeMux, ctx *context.AppContext) {
 
 	mux.HandleFunc("GET /requests", hdlr.getRequestsRequest)
 	mux.HandleFunc("GET /requests/{id}/entries", hdlr.getEntriesRequest)
+	mux.HandleFunc("POST /requests", hdlr.postRequestsRequest)
 }
