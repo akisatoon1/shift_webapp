@@ -86,3 +86,20 @@ func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	}
 	return entries, nil
 }
+
+// 新しいシフトリクエストを作成
+func (db *Sqlite3DB) CreateRequest(creatorID int, startDate time.Time, endDate time.Time, deadline time.Time) (int, error) {
+	res, err := db.Conn.Exec(
+		"INSERT INTO requests (creator_id, start_date, end_date, deadline) VALUES (?, ?, ?, ?)",
+		creatorID, startDate.Format(time.DateOnly), endDate.Format(time.DateOnly), deadline.Format(time.DateOnly),
+	)
+	if err != nil {
+		return -1, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return int(id), nil
+}
