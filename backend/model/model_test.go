@@ -55,7 +55,7 @@ func TestGetEntries(t *testing.T) {
 func TestCreateRequest(t *testing.T) {
 	ctx := newTestContext()
 
-	got, err := CreateRequest(ctx, PostRequestsBody{CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01"})
+	got, err := CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

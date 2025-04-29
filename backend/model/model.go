@@ -108,19 +108,22 @@ func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, err
 	return response, nil
 }
 
-type PostRequestsBody struct {
+// 新しいシフトリクエストを作成するため
+// 新しいシフトリクエストの内容を表す
+type NewRequest struct {
 	CreatorID int    `json:"creator_id"`
 	StartDate string `json:"start_date"`
 	EndDate   string `json:"end_date"`
 	Deadline  string `json:"deadline"`
 }
 
+// 作成したシフトリクエストのidのみを返す
 type PostRequestsResponse struct {
 	ID int `json:"id"`
 }
 
-// シフトリクエストを作成する
-func CreateRequest(ctx *context.AppContext, request PostRequestsBody) (PostRequestsResponse, error) {
+// 新しいシフトリクエストを作成する
+func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsResponse, error) {
 	// 日付の整合性チェック
 	// 期限 <= 開始日 <= 終了日 でなければいけない
 	deadline, _ := time.Parse(time.DateOnly, request.Deadline)
