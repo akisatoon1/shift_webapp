@@ -9,7 +9,6 @@ import (
 )
 
 // TODO
-// content-typeのバリデーション
 // ログインしているユーザーのIDを取得する
 
 type handler struct {
