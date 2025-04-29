@@ -6,8 +6,13 @@ package model
 
 import (
 	"backend/context"
+	"errors"
 	"time"
 )
+
+// TODO
+// validation
+// time.Timeの形式がそれぞれ違うのが面倒
 
 // APIレスポンスのcreatorやuserフィールドで利用される
 type User struct {
@@ -116,8 +121,21 @@ type PostRequestsResponse struct {
 
 // シフトリクエストを作成する
 func CreateRequest(ctx *context.AppContext, request PostRequestsBody) (PostRequestsResponse, error) {
-	// 入力値のバリデーション
-	// モデルに渡す
+	// 日付の整合性チェック
+	// 期限 <= 開始日 <= 終了日 でなければいけない
+	deadline, _ := time.Parse(time.DateOnly, request.Deadline)
+	startDate, _ := time.Parse(time.DateOnly, request.StartDate)
+	endDate, _ := time.Parse(time.DateOnly, request.EndDate)
+	if !((deadline.Before(startDate) || deadline.Equal(startDate)) && (startDate.Before(endDate) || startDate.Equal(endDate))) {
+		return PostRequestsResponse{}, errors.New("input date must be deadline <= start_date <= end_date")
+	}
+
+	// DBに保存
+	requestID, err := ctx.DB.CreateRequest(request.CreatorID, startDate, endDate, deadline)
+	if err != nil {
+		return PostRequestsResponse{}, err
+	}
+
 	// レスポンス
-	return PostRequestsResponse{ID: 3}, nil
+	return PostRequestsResponse{ID: requestID}, nil
 }
