@@ -154,7 +154,7 @@ func TestPostRequestsHandler(t *testing.T) {
 
 	wantJSON := `
 	{
-		"id": 3,
+		"id": 3
 	}
 	`
 	var want interface{}
