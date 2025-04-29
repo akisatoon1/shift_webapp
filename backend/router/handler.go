@@ -11,12 +11,20 @@ import (
 // TODO
 // ログインしているユーザーのIDを取得する
 
+// コンテキストに依存するhandler関数
+type handlerFunc func(*context.AppContext, http.ResponseWriter, *http.Request)
+
 type handler struct {
-	ctx *context.AppContext
+	ctx       *context.AppContext
+	handlerFn handlerFunc
 }
 
-func (h *handler) getRequestsRequest(w http.ResponseWriter, r *http.Request) {
-	requests, err := model.GetRequests(h.ctx)
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.handlerFn(h.ctx, w, r)
+}
+
+func getRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
+	requests, err := model.GetRequests(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -24,7 +32,7 @@ func (h *handler) getRequestsRequest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(requests)
 }
 
-func (h *handler) getEntriesRequest(w http.ResponseWriter, r *http.Request) {
+func getEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
 	requestId := r.PathValue("id")
 	requestIdInt, err := strconv.Atoi(requestId)
 	if err != nil {
@@ -32,7 +40,7 @@ func (h *handler) getEntriesRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := model.GetEntries(h.ctx, requestIdInt)
+	entries, err := model.GetEntries(ctx, requestIdInt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -40,7 +48,7 @@ func (h *handler) getEntriesRequest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(entries)
 }
 
-func (h *handler) postRequestsRequest(w http.ResponseWriter, r *http.Request) {
+func postRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
 	// リクエストボディの形式を定義する
 	type Body struct {
 		StartDate string `json:"start_date"`
@@ -56,7 +64,7 @@ func (h *handler) postRequestsRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 新しいシフトリクエストを作成する
-	response, err := model.CreateRequest(h.ctx, model.NewRequest{
+	response, err := model.CreateRequest(ctx, model.NewRequest{
 		CreatorID: 2, // TODO: ログインしているユーザーのIDを取得する
 		StartDate: body.StartDate,
 		EndDate:   body.EndDate,
