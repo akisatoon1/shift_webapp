@@ -102,3 +102,22 @@ func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, err
 
 	return response, nil
 }
+
+type PostRequestsBody struct {
+	CreatorID int    `json:"creator_id"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+	Deadline  string `json:"deadline"`
+}
+
+type PostRequestsResponse struct {
+	ID int `json:"id"`
+}
+
+// シフトリクエストを作成する
+func CreateRequest(ctx *context.AppContext, request PostRequestsBody) (PostRequestsResponse, error) {
+	// 入力値のバリデーション
+	// モデルに渡す
+	// レスポンス
+	return PostRequestsResponse{ID: 3}, nil
+}
