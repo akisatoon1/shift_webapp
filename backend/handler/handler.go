@@ -8,8 +8,7 @@ import (
 // TODO
 // ログインしているユーザーのIDを取得する
 
-// コンテキストに依存するhandler関数
-type HandlerFuncWithContext func(*context.AppContext, http.ResponseWriter, *http.Request)
+type HandlerFuncWithContext func(*context.AppContext, http.ResponseWriter, *http.Request) *AppError
 
 type Handler struct {
 	ctx       *context.AppContext
@@ -17,7 +16,9 @@ type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.handlerFn(h.ctx, w, r)
+	if err := h.handlerFn(h.ctx, w, r); err != nil {
+		http.Error(w, err.message, err.code)
+	}
 }
 
 func NewHandler(ctx *context.AppContext, handlerFn HandlerFuncWithContext) *Handler {

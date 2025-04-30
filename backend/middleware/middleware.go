@@ -7,15 +7,14 @@ import (
 )
 
 func ValidateContentType(next handler.HandlerFuncWithContext) handler.HandlerFuncWithContext {
-	fn := func(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
+	fn := func(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *handler.AppError {
 		if r.Method != http.MethodGet {
 			contentType := r.Header.Get("Content-Type")
 			if contentType != "application/json" {
-				http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
-				return
+				return handler.NewAppError(nil, "ValidateContentType: Content-Type must be application/json", http.StatusUnsupportedMediaType)
 			}
 		}
-		next(ctx, w, r)
+		return next(ctx, w, r)
 	}
 	return fn
 }
