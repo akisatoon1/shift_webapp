@@ -1,11 +1,12 @@
 package router
 
 import (
+	"backend/context"
 	"net/http"
 )
 
-func validateContentType(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
+func validateContentType(next handlerFunc) handlerFunc {
+	fn := func(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			contentType := r.Header.Get("Content-Type")
 			if contentType != "application/json" {
@@ -14,7 +15,7 @@ func validateContentType(next http.Handler) http.Handler {
 				return
 			}
 		}
-		next.ServeHTTP(w, r)
+		next(ctx, w, r)
 	}
-	return http.HandlerFunc(fn)
+	return fn
 }

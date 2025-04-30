@@ -7,25 +7,26 @@ import (
 
 // ルーティング情報を表す構造体
 type route struct {
-	method  string
-	pattern string
-	handler http.Handler
+	method    string
+	pattern   string
+	handlerFn handlerFunc
 }
 
 // ミドルウェアを適用してルーティングを設定するヘルパー関数
-func applyRoutes(mux *http.ServeMux, routes []route) {
+func applyRoutes(ctx *context.AppContext, mux *http.ServeMux, routes []route) {
 	for _, r := range routes {
-		handler := validateContentType(r.handler)
+		r.handlerFn = validateContentType(r.handlerFn)
+		handler := &handler{ctx: ctx, handlerFn: r.handlerFn}
 		mux.Handle(r.method+" "+r.pattern, handler)
 	}
 }
 
 func Routes(mux *http.ServeMux, ctx *context.AppContext) {
 	routes := []route{
-		{"GET", "/requests", &handler{ctx: ctx, handlerFn: getRequestsRequest}},
-		{"GET", "/requests/{id}/entries", &handler{ctx: ctx, handlerFn: getEntriesRequest}},
-		{"POST", "/requests", &handler{ctx: ctx, handlerFn: postRequestsRequest}},
+		{"GET", "/requests", getRequestsRequest},
+		{"GET", "/requests/{id}/entries", getEntriesRequest},
+		{"POST", "/requests", postRequestsRequest},
 	}
 
-	applyRoutes(mux, routes)
+	applyRoutes(ctx, mux, routes)
 }
