@@ -12,12 +12,38 @@ import (
 )
 
 // TODO
-// json比較を関数化
 // テスト失敗時のレスポンスボディのエラーメッセージを表示する
 
 /*
 	jsonの比較がめんどうくさい...
 */
+
+// JSON形式のレスポンスを評価するヘルパー関数
+func AssertRes(t *testing.T, got []byte, wantJSON string) {
+	t.Helper()
+	var gotInterface interface{}
+	var wantInterface interface{}
+
+	if err := json.Unmarshal(got, &gotInterface); err != nil {
+		t.Fatalf("got json decode error: %v", err)
+	}
+
+	if err := json.Unmarshal([]byte(wantJSON), &wantInterface); err != nil {
+		t.Fatalf("want json decode error: %v", err)
+	}
+
+	if !reflect.DeepEqual(gotInterface, wantInterface) {
+		t.Errorf("\ngot  %#v\nwant %#v", gotInterface, wantInterface)
+	}
+}
+
+// HTTPステータスコードを評価するヘルパー関数
+func AssertCode(t *testing.T, got, want int) {
+	t.Helper()
+	if got != want {
+		t.Fatalf("want status code %d, got %d", want, got)
+	}
+}
 
 func newTestContext() *context.AppContext {
 	return &context.AppContext{
@@ -40,14 +66,7 @@ func TestGetRequestsHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("want 200, got %d", w.Code)
-	}
-
-	var got interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
-		t.Fatalf("json decode error: %v", err)
-	}
+	AssertCode(t, w.Code, http.StatusOK)
 
 	wantJSON := `
 	[
@@ -69,33 +88,18 @@ func TestGetRequestsHandler(t *testing.T) {
 		}
 	]
 	`
-	var want interface{}
-	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
-		t.Fatalf("want json decode error: %v", err)
-	}
-
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("\ngot  %#v\nwant %#v", got, want)
-	}
+	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
 func TestGetEntriesHandler(t *testing.T) {
 	appCtx := newTestContext()
 	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}/entries", GetEntriesRequest)
 
-	// requestID=1のエントリーを取得
 	req := httptest.NewRequest("GET", "/requests/1/entries", nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("want 200, got %d", w.Code)
-	}
-
-	var got map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
-		t.Fatalf("json decode error: %v", err)
-	}
+	AssertCode(t, w.Code, http.StatusOK)
 
 	wantJSON := `
 	{
@@ -116,21 +120,13 @@ func TestGetEntriesHandler(t *testing.T) {
 		]
 	}
 	`
-	var want interface{}
-	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
-		t.Fatalf("want json decode error: %v", err)
-	}
-
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("\ngot  %#v\nwant %#v", got, want)
-	}
+	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
 func TestPostRequestsHandler(t *testing.T) {
 	appCtx := newTestContext()
 	mux := setHandlerToEndpoint(appCtx, "POST /requests", PostRequestsRequest)
 
-	// リクエストボディの作成
 	requestBody := map[string]string{
 		"start_date": "2024-06-01",
 		"end_date":   "2024-06-30",
@@ -138,42 +134,25 @@ func TestPostRequestsHandler(t *testing.T) {
 	}
 	body, _ := json.Marshal(requestBody)
 
-	// POSTリクエストの作成
 	req := httptest.NewRequest("POST", "/requests", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("want 201, got %d", w.Code)
-	}
-
-	// レスポンスの検証
-	var got map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
-		t.Fatalf("json decode error: %v", err)
-	}
+	AssertCode(t, w.Code, http.StatusCreated)
 
 	wantJSON := `
 	{
 		"id": 3
 	}
 	`
-	var want interface{}
-	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
-		t.Fatalf("want json decode error: %v", err)
-	}
-
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("\ngot  %#v\nwant %#v", got, want)
-	}
+	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
 func TestPostEntriesHandler(t *testing.T) {
 	appCtx := newTestContext()
 	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/entries", PostEntriesRequest)
 
-	// リクエストボディの作成
 	requestBody := []map[string]interface{}{
 		{
 			"date": "2024-06-01",
@@ -187,15 +166,12 @@ func TestPostEntriesHandler(t *testing.T) {
 
 	body, _ := json.Marshal(requestBody)
 
-	// POSTリクエストの作成
 	req := httptest.NewRequest("POST", "/requests/1/entries", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("want 201, got %d", w.Code)
-	}
+	AssertCode(t, w.Code, http.StatusCreated)
 
 	wantJSON := `
 	{
@@ -203,17 +179,5 @@ func TestPostEntriesHandler(t *testing.T) {
 		"entries": [{"id": 5}, {"id": 6}]
 	}
 	`
-	var want interface{}
-	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
-		t.Fatalf("want json decode error: %v", err)
-	}
-
-	var got map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
-		t.Fatalf("json decode error: %v", err)
-	}
-
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("\ngot  %#v\nwant %#v", got, want)
-	}
+	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
