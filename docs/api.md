@@ -92,5 +92,8 @@
 ```
 {
     "id": number,
+    "entries": {
+        "id": number
+    }[]
 }
 ```
