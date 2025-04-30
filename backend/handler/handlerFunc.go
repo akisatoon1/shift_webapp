@@ -67,5 +67,47 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 }
 
 func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// シフトリクエストのIDを取得する
+	// 整数ではない場合はエラーを返す
+	requestId := r.PathValue("id")
+	requestIdInt, err := strconv.Atoi(requestId)
+	if err != nil {
+		return NewAppError(err, "PostEntriesRequest: requestidが整数ではありません", http.StatusBadRequest)
+	}
+
+	// リクエストボディの形式を定義する
+	type Body []struct {
+		Date string `json:"date"`
+		Hour int    `json:"hour"`
+	}
+
+	// リクエストボディのバリデーション
+	var body Body
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return NewAppError(err, "PostEntriesRequest: リクエストボディのデコードに失敗しました", http.StatusBadRequest)
+	}
+
+	// モデルに渡す形に変換する
+	entries := model.NewEntries{
+		ID:      requestIdInt,
+		Entries: []model.NewEntry{},
+	}
+	for _, entry := range body {
+		entries.Entries = append(entries.Entries, model.NewEntry{
+			UserID: 1, // TODO: ログインしているユーザーのIDを取得する
+			Date:   entry.Date,
+			Hour:   entry.Hour,
+		})
+	}
+
+	// エントリーを作成する
+	response, err := model.CreateEntries(ctx, entries)
+	if err != nil {
+		return NewAppError(err, "PostEntriesRequest: エントリーの作成に失敗しました", http.StatusInternalServerError)
+	}
+
+	// レスポンスを返す
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

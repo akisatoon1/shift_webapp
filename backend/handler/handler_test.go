@@ -13,6 +13,7 @@ import (
 
 // TODO
 // json比較を関数化
+// テスト失敗時のレスポンスボディのエラーメッセージを表示する
 
 /*
 	jsonの比較がめんどうくさい...
@@ -161,6 +162,55 @@ func TestPostRequestsHandler(t *testing.T) {
 	var want interface{}
 	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
 		t.Fatalf("want json decode error: %v", err)
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("\ngot  %#v\nwant %#v", got, want)
+	}
+}
+
+func TestPostEntriesHandler(t *testing.T) {
+	appCtx := newTestContext()
+	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/entries", PostEntriesRequest)
+
+	// リクエストボディの作成
+	requestBody := []map[string]interface{}{
+		{
+			"date": "2024-06-01",
+			"hour": 8,
+		},
+		{
+			"date": "2024-06-01",
+			"hour": 9,
+		},
+	}
+
+	body, _ := json.Marshal(requestBody)
+
+	// POSTリクエストの作成
+	req := httptest.NewRequest("POST", "/requests/1/entries", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("want 201, got %d", w.Code)
+	}
+
+	wantJSON := `
+	{
+		"id": 1,
+		"entries": [{"id": 5}, {"id": 6}]
+	}
+	`
+	var want interface{}
+	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
+		t.Fatalf("want json decode error: %v", err)
+	}
+
+	var got map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("json decode error: %v", err)
 	}
 
 	if !reflect.DeepEqual(got, want) {
