@@ -35,4 +35,5 @@ type DB interface {
 	GetRequests() ([]Request, error)
 	GetEntriesByRequestID(requestID int) ([]Entry, error)
 	CreateRequest(creatorID int, startDate time.Time, endDate time.Time, deadline time.Time) (int, error)
+	CreateEntry(requestID int, userID int, date time.Time, hour int) (int, error)
 }

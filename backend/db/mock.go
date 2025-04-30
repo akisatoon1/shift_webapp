@@ -40,6 +40,11 @@ func (m *mockDB) CreateRequest(creatorID int, startDate time.Time, endDate time.
 	return len(m.Requests), nil
 }
 
+func (m *mockDB) CreateEntry(requestID int, userID int, date time.Time, hour int) (int, error) {
+	m.Entries = append(m.Entries, Entry{ID: len(m.Entries) + 1, RequestID: requestID, UserID: userID, Date: date, Hour: hour})
+	return len(m.Entries), nil
+}
+
 // モックDBを初期化
 func InitMockDB() *mockDB {
 	testTime := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)

@@ -7,6 +7,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// TODO: トランザクション管理
+
 // Sqlite3DBはDBインターフェースのsqlite3実装
 // フィールドConnは*sql.DB型
 type Sqlite3DB struct {
@@ -92,6 +94,23 @@ func (db *Sqlite3DB) CreateRequest(creatorID int, startDate time.Time, endDate t
 	res, err := db.Conn.Exec(
 		"INSERT INTO requests (creator_id, start_date, end_date, deadline) VALUES (?, ?, ?, ?)",
 		creatorID, startDate.Format(time.DateOnly), endDate.Format(time.DateOnly), deadline.Format(time.DateOnly),
+	)
+	if err != nil {
+		return -1, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return int(id), nil
+}
+
+// 新しいエントリーを作成
+func (db *Sqlite3DB) CreateEntry(requestID int, userID int, date time.Time, hour int) (int, error) {
+	res, err := db.Conn.Exec(
+		"INSERT INTO entries (request_id, user_id, date, hour) VALUES (?, ?, ?, ?)",
+		requestID, userID, date.Format(time.DateOnly), hour,
 	)
 	if err != nil {
 		return -1, err
