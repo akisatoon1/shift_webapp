@@ -142,3 +142,34 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 	// レスポンス
 	return PostRequestsResponse{ID: requestID}, nil
 }
+
+// 新しく作成する1回分のエントリーの内容を表す
+type NewEntry struct {
+	UserID int    `json:"user_id"`
+	Date   string `json:"date"`
+	Hour   int    `json:"hour"`
+}
+
+// 全ての新しく作成するエントリーの内容を表す
+// IDはシフトリクエストのID
+type NewEntries struct {
+	ID      int        `json:"id"`
+	Entries []NewEntry `json:"entries"`
+}
+
+// 作成した1回分のエントリーのidのみを返す
+type PostEntriesResponseEntry struct {
+	ID int `json:"id"`
+}
+
+// 作成した全てのエントリーのidのみを返す
+// IDはシフトリクエストのID
+type PostEntriesResponse struct {
+	ID      int                        `json:"id"`
+	Entries []PostEntriesResponseEntry `json:"entries"`
+}
+
+// エントリーを作成する
+func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResponse, error) {
+	return PostEntriesResponse{}, nil
+}

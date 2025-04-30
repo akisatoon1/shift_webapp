@@ -65,3 +65,17 @@ func TestCreateRequest(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 }
+
+func TestCreateEntries(t *testing.T) {
+	ctx := newTestContext()
+
+	got, err := CreateEntries(ctx, NewEntries{ID: 1, Entries: []NewEntry{{UserID: 1, Date: "2024-06-01", Hour: 8}, {UserID: 1, Date: "2024-06-01", Hour: 9}}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := PostEntriesResponse{ID: 1, Entries: []PostEntriesResponseEntry{{ID: 5}, {ID: 6}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
