@@ -171,5 +171,25 @@ type PostEntriesResponse struct {
 
 // エントリーを作成する
 func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResponse, error) {
-	return PostEntriesResponse{}, nil
+	// TODO: start_date <= date <= end_date のバリデーション
+
+	// エントリーを提出するシフトリクエストのID
+	requestID := entries.ID
+
+	response := PostEntriesResponse{
+		ID:      requestID,
+		Entries: []PostEntriesResponseEntry{},
+	}
+
+	// 全てのエントリーを作成
+	for _, entry := range entries.Entries {
+		date, _ := time.Parse(time.DateOnly, entry.Date)
+		entryID, err := ctx.DB.CreateEntry(requestID, entry.UserID, date, entry.Hour)
+		if err != nil {
+			return PostEntriesResponse{}, err
+		}
+		response.Entries = append(response.Entries, PostEntriesResponseEntry{ID: entryID})
+	}
+
+	return response, nil
 }
