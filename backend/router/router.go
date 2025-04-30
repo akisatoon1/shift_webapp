@@ -28,6 +28,7 @@ func Routes(mux *http.ServeMux, ctx *context.AppContext) {
 		{"GET", "/requests", handler.GetRequestsRequest},
 		{"GET", "/requests/{id}/entries", handler.GetEntriesRequest},
 		{"POST", "/requests", handler.PostRequestsRequest},
+		{"POST", "/requests/{id}/entries", handler.PostEntriesRequest},
 	}
 
 	applyRoutes(ctx, mux, routes)

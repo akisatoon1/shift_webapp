@@ -65,3 +65,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 	json.NewEncoder(w).Encode(response)
 	return nil
 }
+
+func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	return nil
+}
