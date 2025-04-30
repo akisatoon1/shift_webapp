@@ -1,4 +1,4 @@
-package router
+package handler
 
 import (
 	"backend/context"
@@ -8,22 +8,11 @@ import (
 	"strconv"
 )
 
-// TODO
-// ログインしているユーザーのIDを取得する
+/*
+	APIエンドポイントに対応するハンドラー関数
+*/
 
-// コンテキストに依存するhandler関数
-type handlerFunc func(*context.AppContext, http.ResponseWriter, *http.Request)
-
-type handler struct {
-	ctx       *context.AppContext
-	handlerFn handlerFunc
-}
-
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.handlerFn(h.ctx, w, r)
-}
-
-func getRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
+func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
 	requests, err := model.GetRequests(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -32,7 +21,7 @@ func getRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	json.NewEncoder(w).Encode(requests)
 }
 
-func getEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
+func GetEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
 	requestId := r.PathValue("id")
 	requestIdInt, err := strconv.Atoi(requestId)
 	if err != nil {
@@ -48,7 +37,7 @@ func getEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(entries)
 }
 
-func postRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
+func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) {
 	// リクエストボディの形式を定義する
 	type Body struct {
 		StartDate string `json:"start_date"`

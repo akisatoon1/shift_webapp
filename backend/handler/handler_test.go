@@ -1,4 +1,4 @@
-package router
+package handler
 
 import (
 	"backend/context"
@@ -24,15 +24,16 @@ func newTestContext() *context.AppContext {
 	}
 }
 
-func setupTestMux(appCtx *context.AppContext) *http.ServeMux {
+// 1つのAPIエンドポイントに、1つのハンドラーをセットする
+func setHandlerToEndpoint(appCtx *context.AppContext, endpoint string, handlerFn HandlerFuncWithContext) *http.ServeMux {
 	mux := http.NewServeMux()
-	Routes(mux, appCtx)
+	mux.Handle(endpoint, NewHandler(appCtx, handlerFn))
 	return mux
 }
 
 func TestGetRequestsHandler(t *testing.T) {
 	appCtx := newTestContext()
-	mux := setupTestMux(appCtx)
+	mux := setHandlerToEndpoint(appCtx, "GET /requests", GetRequestsRequest)
 
 	req := httptest.NewRequest("GET", "/requests", nil)
 	w := httptest.NewRecorder()
@@ -79,7 +80,7 @@ func TestGetRequestsHandler(t *testing.T) {
 
 func TestGetEntriesHandler(t *testing.T) {
 	appCtx := newTestContext()
-	mux := setupTestMux(appCtx)
+	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}/entries", GetEntriesRequest)
 
 	// requestID=1のエントリーを取得
 	req := httptest.NewRequest("GET", "/requests/1/entries", nil)
@@ -126,7 +127,7 @@ func TestGetEntriesHandler(t *testing.T) {
 
 func TestPostRequestsHandler(t *testing.T) {
 	appCtx := newTestContext()
-	mux := setupTestMux(appCtx)
+	mux := setHandlerToEndpoint(appCtx, "POST /requests", PostRequestsRequest)
 
 	// リクエストボディの作成
 	requestBody := map[string]string{
