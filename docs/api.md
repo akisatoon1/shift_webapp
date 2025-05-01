@@ -8,7 +8,7 @@
 - `Content-Type: application/json`
 
 ## 認証
-全てのエンドポイントでトークンが必要.
+ほぼ全てのエンドポイント(GET /loginを除く)でトークンが必要.
 
 `Authorization: Session {token}`
 
@@ -26,6 +26,28 @@
 - POST: `201`
 
 ## エンドポイント一覧
+
+### POST /login
+**ログイン成功したら、Session Tokenを返す**
+#### Request Body
+```
+{
+    "login_id": string,
+    "password": string
+}
+```
+#### Response Body
+```
+{
+    "session_token": string,
+    "expires_at": number
+}
+```
+
+### DELETE /session
+**ログアウトする**
+#### Response
+`204 No Content`
 
 ### GET /requests
 **リクエスト一覧を返す**

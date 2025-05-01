@@ -8,6 +8,17 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime'))
 );
 
+-- セッションテーブル
+CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    expires_at INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- リクエストテーブル
 CREATE TABLE IF NOT EXISTS requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
