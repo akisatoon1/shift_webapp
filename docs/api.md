@@ -10,7 +10,7 @@
 ## 認証
 全てのエンドポイントでトークンが必要.
 
-`Authorization: Bearer {token}`
+`Authorization: Session {token}`
 
 ## エラー
 エラーメッセージを返す.
