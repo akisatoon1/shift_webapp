@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 )
 
@@ -36,8 +37,11 @@ func main() {
 	log.Println("DBの接続に成功しました")
 	defer db.Close()
 
+	// セッションの初期化
+	cookie := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+
 	// アプリケーション全体で使うデータを管理するコンテキストを作成
-	appCtx := context.NewAppContext(db)
+	appCtx := context.NewAppContext(db, cookie)
 
 	// ルーティングの設定
 	mux := http.NewServeMux()
