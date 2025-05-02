@@ -4,13 +4,11 @@
 `http://localhost:3000/api`
 
 ## Header
-- `Authorization`
+- `Cookie: <cookie-key>=<cookie-value>`
 - `Content-Type: application/json`
 
-## 認証
-ほぼ全てのエンドポイント(GET /loginを除く)でトークンが必要.
-
-`Authorization: Session {token}`
+## 認証,認可
+ほぼ全てのエンドポイント(GET /loginを除く)でCookieが必要.
 
 ## エラー
 エラーメッセージを返す.
@@ -28,19 +26,14 @@
 ## エンドポイント一覧
 
 ### POST /login
-**ログイン成功したら、Session Tokenを返す**
+**ログインを試みる**
+- 成功時: `200 OK`
+- 失敗時: `401 Unauthorized`
 #### Request Body
 ```
 {
     "login_id": string,
     "password": string
-}
-```
-#### Response Body
-```
-{
-    "session_token": string,
-    "expires_at": number
 }
 ```
 
