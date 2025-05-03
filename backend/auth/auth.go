@@ -2,8 +2,21 @@ package auth
 
 import (
 	"backend/context"
+	"errors"
 	"net/http"
 )
+
+func Logout(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) error {
+	session, _ := ctx.Cookie.Get(r, "login_session")
+
+	// セッションが存在しない場合でもempty sessionが返される仕様なので、
+	// session==nilの場合は想定されていない
+	if session == nil {
+		return errors.New("session is nil")
+	}
+	session.Options.MaxAge = -1
+	return session.Save(r, w)
+}
 
 // get user id from session.
 // return false if user is not logged in or invalid cookie.

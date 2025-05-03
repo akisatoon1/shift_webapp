@@ -85,3 +85,35 @@ func TestIsManager(t *testing.T) {
 		t.Errorf("want not manager, got ok=%v, err=%v", ok2, err2)
 	}
 }
+
+func TestLogout(t *testing.T) {
+	store := sessions.NewCookieStore([]byte("test-secret"))
+	ctx := &context.AppContext{Cookie: store}
+
+	// --- 正常系: セッションが存在する場合 ---
+	req := httptest.NewRequest("GET", "/", nil)
+	rr := httptest.NewRecorder()
+
+	// セッションを作成し保存
+	session, _ := store.Get(req, "login_session")
+	session.Values["user_id"] = 123
+	session.Save(req, rr)
+
+	// Cookieを新しいリクエストにセット
+	req2 := httptest.NewRequest("GET", "/", nil)
+	for _, cookie := range rr.Result().Cookies() {
+		req2.AddCookie(cookie)
+	}
+	rr2 := httptest.NewRecorder()
+
+	err := Logout(ctx, rr2, req2)
+	if err != nil {
+		t.Errorf("Logout returned error: %v", err)
+	}
+
+	// セッションが無効化されているか確認
+	session2, _ := store.Get(req2, "login_session")
+	if session2.Options.MaxAge != -1 {
+		t.Errorf("session MaxAge should be -1 after logout, got %d", session2.Options.MaxAge)
+	}
+}
