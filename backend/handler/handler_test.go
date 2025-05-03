@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/gorilla/sessions"
 )
 
 // TODO
@@ -45,9 +47,18 @@ func AssertCode(t *testing.T, got, want int) {
 	}
 }
 
+// CookieStoreなしのテスト用AppContext生成
 func newTestContext() *context.AppContext {
 	return &context.AppContext{
 		DB: db.InitMockDB(),
+	}
+}
+
+// CookieStore付きのテスト用AppContext生成
+func newTestContextWithCookie() *context.AppContext {
+	return &context.AppContext{
+		DB:     db.InitMockDB(),
+		Cookie: sessions.NewCookieStore([]byte("test-secret")),
 	}
 }
 
@@ -180,4 +191,84 @@ func TestPostEntriesHandler(t *testing.T) {
 	}
 	`
 	AssertRes(t, w.Body.Bytes(), wantJSON)
+}
+
+func TestLoginHandler(t *testing.T) {
+	appCtx := newTestContextWithCookie()
+	mux := setHandlerToEndpoint(appCtx, "POST /login", LoginRequest)
+
+	// --- 正常系 ---
+	body := map[string]string{
+		"login_id": "test_user",
+		"password": "password",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/login", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	AssertCode(t, w.Code, http.StatusOK)
+
+	// セッションCookieがセットされているか
+	cookies := w.Result().Cookies()
+	found := false
+	for _, c := range cookies {
+		if c.Name == "login_session" && c.Value != "" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("login_session cookieがセットされていません")
+	}
+
+	// --- 異常系: パスワード間違い ---
+	body2 := map[string]string{
+		"login_id": "test_user",
+		"password": "wrong",
+	}
+	jsonBody2, _ := json.Marshal(body2)
+	req2 := httptest.NewRequest("POST", "/login", bytes.NewBuffer(jsonBody2))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	mux.ServeHTTP(w2, req2)
+	AssertCode(t, w2.Code, http.StatusUnauthorized)
+}
+
+func TestLogoutHandler(t *testing.T) {
+	appCtx := newTestContextWithCookie()
+	mux := setHandlerToEndpoint(appCtx, "DELETE /session", LogoutRequest)
+
+	// まずloginしてCookie取得
+	loginBody := map[string]string{
+		"login_id": "test_user",
+		"password": "password",
+	}
+	jsonBody, _ := json.Marshal(loginBody)
+	loginReq := httptest.NewRequest("POST", "/login", bytes.NewBuffer(jsonBody))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginMux := setHandlerToEndpoint(appCtx, "POST /login", LoginRequest)
+	loginW := httptest.NewRecorder()
+	loginMux.ServeHTTP(loginW, loginReq)
+
+	// loginで得たCookieをlogoutリクエストに付与
+	logoutReq := httptest.NewRequest("DELETE", "/session", nil)
+	for _, c := range loginW.Result().Cookies() {
+		logoutReq.AddCookie(c)
+	}
+	logoutW := httptest.NewRecorder()
+	mux.ServeHTTP(logoutW, logoutReq)
+	AssertCode(t, logoutW.Code, http.StatusOK)
+
+	// セッションが無効化されているか
+	// MaxAge=-1のCookieが返る
+	found := false
+	for _, c := range logoutW.Result().Cookies() {
+		if c.Name == "login_session" && c.MaxAge == -1 {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("logout後、login_session Cookieが無効化されていません")
+	}
 }

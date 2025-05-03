@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/auth"
 	"backend/context"
 	"backend/model"
 	"encoding/json"
@@ -11,6 +12,32 @@ import (
 /*
 	APIエンドポイントに対応するハンドラー関数
 */
+
+func LoginRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	type Body struct {
+		LoginID  string `json:"login_id"`
+		Password string `json:"password"`
+	}
+
+	var body Body
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return NewAppError(err, "LoginRequest: リクエストボディのデコードに失敗しました", http.StatusBadRequest)
+	}
+
+	err := auth.Login(ctx, w, r, body.LoginID, body.Password)
+	if err != nil {
+		return NewAppError(err, "LoginRequest: ログインに失敗しました", http.StatusUnauthorized)
+	}
+	return nil
+}
+
+func LogoutRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	err := auth.Logout(ctx, w, r)
+	if err != nil {
+		return NewAppError(err, "LogoutRequest: ログアウトに失敗しました", http.StatusInternalServerError)
+	}
+	return nil
+}
 
 func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	requests, err := model.GetRequests(ctx)
