@@ -74,3 +74,12 @@ func InitMockDB() *mockDB {
 		},
 	}
 }
+
+// テスト用データを入れたモックDBを生成
+func NewMockDB(requests []Request, users []User, entries []Entry) *mockDB {
+	return &mockDB{
+		Requests: requests,
+		Users:    users,
+		Entries:  entries,
+	}
+}

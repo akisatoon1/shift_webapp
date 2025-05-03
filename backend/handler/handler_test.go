@@ -9,16 +9,13 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gorilla/sessions"
 )
 
 // TODO
 // テスト失敗時のレスポンスボディのエラーメッセージを表示する
-
-/*
-	jsonの比較がめんどうくさい...
-*/
 
 // JSON形式のレスポンスを評価するヘルパー関数
 func AssertRes(t *testing.T, got []byte, wantJSON string) {
@@ -47,17 +44,9 @@ func AssertCode(t *testing.T, got, want int) {
 	}
 }
 
-// CookieStoreなしのテスト用AppContext生成
-func newTestContext() *context.AppContext {
+func newTestContext(requests []db.Request, users []db.User, entries []db.Entry) *context.AppContext {
 	return &context.AppContext{
-		DB: db.InitMockDB(),
-	}
-}
-
-// CookieStore付きのテスト用AppContext生成
-func newTestContextWithCookie() *context.AppContext {
-	return &context.AppContext{
-		DB:     db.InitMockDB(),
+		DB:     db.NewMockDB(requests, users, entries),
 		Cookie: sessions.NewCookieStore([]byte("test-secret")),
 	}
 }
@@ -70,7 +59,16 @@ func setHandlerToEndpoint(appCtx *context.AppContext, endpoint string, handlerFn
 }
 
 func TestGetRequestsHandler(t *testing.T) {
-	appCtx := newTestContext()
+	appCtx := newTestContext(
+		[]db.Request{
+			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
+			{ID: 2, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
+		},
+		[]db.User{
+			{ID: 2, Name: "テストマネージャー"},
+		},
+		[]db.Entry{},
+	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests", GetRequestsRequest)
 
 	req := httptest.NewRequest("GET", "/requests", nil)
@@ -103,7 +101,19 @@ func TestGetRequestsHandler(t *testing.T) {
 }
 
 func TestGetEntriesHandler(t *testing.T) {
-	appCtx := newTestContext()
+	appCtx := newTestContext(
+		[]db.Request{
+			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
+		},
+		[]db.User{
+			{ID: 1, Name: "テストユーザー1"},
+			{ID: 2, Name: "テストユーザー2"},
+		},
+		[]db.Entry{
+			{ID: 1, RequestID: 1, UserID: 1, Date: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Hour: 8},
+			{ID: 2, RequestID: 1, UserID: 2, Date: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Hour: 8},
+		},
+	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}/entries", GetEntriesRequest)
 
 	req := httptest.NewRequest("GET", "/requests/1/entries", nil)
@@ -118,13 +128,13 @@ func TestGetEntriesHandler(t *testing.T) {
 		"entries": [
 			{
 				"id": 1,
-				"user": {"id": 1, "name": "テストユーザー"},
+				"user": {"id": 1, "name": "テストユーザー1"},
 				"date": "2024-06-01",
 				"hour": 8
 			},
 			{
 				"id": 2,
-				"user": {"id": 2, "name": "テストマネージャー"},
+				"user": {"id": 2, "name": "テストユーザー2"},
 				"date": "2024-06-01",
 				"hour": 8
 			}
@@ -135,7 +145,11 @@ func TestGetEntriesHandler(t *testing.T) {
 }
 
 func TestPostRequestsHandler(t *testing.T) {
-	appCtx := newTestContext()
+	appCtx := newTestContext(
+		[]db.Request{},
+		[]db.User{},
+		[]db.Entry{},
+	)
 	mux := setHandlerToEndpoint(appCtx, "POST /requests", PostRequestsRequest)
 
 	requestBody := map[string]string{
@@ -154,14 +168,20 @@ func TestPostRequestsHandler(t *testing.T) {
 
 	wantJSON := `
 	{
-		"id": 3
+		"id": 1
 	}
 	`
 	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
 func TestPostEntriesHandler(t *testing.T) {
-	appCtx := newTestContext()
+	appCtx := newTestContext(
+		[]db.Request{
+			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
+		},
+		[]db.User{},
+		[]db.Entry{},
+	)
 	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/entries", PostEntriesRequest)
 
 	requestBody := []map[string]interface{}{
@@ -187,14 +207,20 @@ func TestPostEntriesHandler(t *testing.T) {
 	wantJSON := `
 	{
 		"id": 1,
-		"entries": [{"id": 5}, {"id": 6}]
+		"entries": [{"id": 1}, {"id": 2}]
 	}
 	`
 	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
 func TestLoginHandler(t *testing.T) {
-	appCtx := newTestContextWithCookie()
+	appCtx := newTestContext(
+		[]db.Request{},
+		[]db.User{
+			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー"},
+		},
+		[]db.Entry{},
+	)
 	mux := setHandlerToEndpoint(appCtx, "POST /login", LoginRequest)
 
 	// --- 正常系 ---
@@ -236,7 +262,13 @@ func TestLoginHandler(t *testing.T) {
 }
 
 func TestLogoutHandler(t *testing.T) {
-	appCtx := newTestContextWithCookie()
+	appCtx := newTestContext(
+		[]db.Request{},
+		[]db.User{
+			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー"},
+		},
+		[]db.Entry{},
+	)
 	mux := setHandlerToEndpoint(appCtx, "DELETE /session", LogoutRequest)
 
 	// まずloginしてCookie取得
