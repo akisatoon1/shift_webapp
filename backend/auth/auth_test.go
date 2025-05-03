@@ -11,7 +11,7 @@ import (
 
 func TestGetUserID(t *testing.T) {
 	store := sessions.NewCookieStore([]byte("test-secret"))
-	ctx := &context.AppContext{Cookie: store}
+	ctx := context.NewAppContext(nil, store)
 
 	// --- 正常系: セッションにuser_idが入っている場合 ---
 	req := httptest.NewRequest("GET", "/", nil)
@@ -44,16 +44,14 @@ func TestGetUserID(t *testing.T) {
 	}
 }
 
-func newTestContextWithUser(user db.User) *context.AppContext {
-	mock := db.InitMockDB()
-	mock.Users = append(mock.Users, user)
-	return &context.AppContext{DB: mock}
+func newTestContext(user db.User, store *sessions.CookieStore) *context.AppContext {
+	return context.NewAppContext(db.NewMockDB(nil, []db.User{user}, nil), store)
 }
 
 func TestIsEmployee(t *testing.T) {
 	// 従業員権限を持つユーザー
 	user := db.User{ID: 10, Role: RoleEmployee}
-	ctx := newTestContextWithUser(user)
+	ctx := newTestContext(user, nil)
 	ok, err := IsEmployee(ctx, 10)
 	if err != nil || !ok {
 		t.Errorf("want employee, got ok=%v, err=%v", ok, err)
@@ -61,7 +59,7 @@ func TestIsEmployee(t *testing.T) {
 
 	// 権限なしユーザー
 	user2 := db.User{ID: 11, Role: 0}
-	ctx2 := newTestContextWithUser(user2)
+	ctx2 := newTestContext(user2, nil)
 	ok2, err2 := IsEmployee(ctx2, 11)
 	if err2 != nil || ok2 {
 		t.Errorf("want not employee, got ok=%v, err=%v", ok2, err2)
@@ -71,7 +69,7 @@ func TestIsEmployee(t *testing.T) {
 func TestIsManager(t *testing.T) {
 	// マネージャー権限を持つユーザー
 	user := db.User{ID: 20, Role: RoleManager}
-	ctx := newTestContextWithUser(user)
+	ctx := newTestContext(user, nil)
 	ok, err := IsManager(ctx, 20)
 	if err != nil || !ok {
 		t.Errorf("want manager, got ok=%v, err=%v", ok, err)
@@ -79,7 +77,7 @@ func TestIsManager(t *testing.T) {
 
 	// 権限なしユーザー
 	user2 := db.User{ID: 21, Role: 0}
-	ctx2 := newTestContextWithUser(user2)
+	ctx2 := newTestContext(user2, nil)
 	ok2, err2 := IsManager(ctx2, 21)
 	if err2 != nil || ok2 {
 		t.Errorf("want not manager, got ok=%v, err=%v", ok2, err2)
@@ -88,7 +86,7 @@ func TestIsManager(t *testing.T) {
 
 func TestLogout(t *testing.T) {
 	store := sessions.NewCookieStore([]byte("test-secret"))
-	ctx := &context.AppContext{Cookie: store}
+	ctx := context.NewAppContext(nil, store)
 
 	// --- 正常系: セッションが存在する場合 ---
 	req := httptest.NewRequest("GET", "/", nil)
@@ -120,9 +118,8 @@ func TestLogout(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	user := db.User{ID: 42, LoginID: "testuser", Password: "pass123", Role: 0}
-	ctx := newTestContextWithUser(user)
 	store := sessions.NewCookieStore([]byte("test-secret"))
-	ctx.Cookie = store
+	ctx := newTestContext(user, store)
 
 	// --- 正常系: 正しいloginIDとpassword ---
 	req := httptest.NewRequest("POST", "/login", nil)

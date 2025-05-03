@@ -11,7 +11,7 @@ import (
 
 func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, loginID string, password string) error {
 	// login_idとpasswordを比較
-	user, err := ctx.DB.GetUserByLoginID(loginID)
+	user, err := ctx.GetDB().GetUserByLoginID(loginID)
 	if err != nil {
 		return errors.New("invalid login_id or password")
 	}
@@ -21,7 +21,7 @@ func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, logi
 	}
 
 	// 成功時はセッションを作成し、Cookieに保存
-	session, _ := ctx.Cookie.Get(r, "login_session")
+	session, _ := ctx.GetSessionStore().Get(r, "login_session")
 	if session == nil {
 		return errors.New("session is nil")
 	}
@@ -31,7 +31,7 @@ func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, logi
 }
 
 func Logout(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) error {
-	session, _ := ctx.Cookie.Get(r, "login_session")
+	session, _ := ctx.GetSessionStore().Get(r, "login_session")
 
 	// セッションが存在しない場合でもempty sessionが返される仕様なので、
 	// session==nilの場合は想定されていない
@@ -45,7 +45,7 @@ func Logout(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) err
 // get user id from session.
 // return false if user is not logged in or invalid cookie.
 func GetUserID(ctx *context.AppContext, r *http.Request) (bool, int) {
-	session, _ := ctx.Cookie.Get(r, "login_session")
+	session, _ := ctx.GetSessionStore().Get(r, "login_session")
 	if session == nil || session.IsNew {
 		return false, -1
 	}
@@ -66,7 +66,7 @@ const (
 
 // check if user is employee
 func IsEmployee(ctx *context.AppContext, userID int) (bool, error) {
-	user, err := ctx.DB.GetUserByID(userID)
+	user, err := ctx.GetDB().GetUserByID(userID)
 	if err != nil {
 		return false, err
 	}
@@ -75,7 +75,7 @@ func IsEmployee(ctx *context.AppContext, userID int) (bool, error) {
 
 // check if user is manager
 func IsManager(ctx *context.AppContext, userID int) (bool, error) {
-	user, err := ctx.DB.GetUserByID(userID)
+	user, err := ctx.GetDB().GetUserByID(userID)
 	if err != nil {
 		return false, err
 	}

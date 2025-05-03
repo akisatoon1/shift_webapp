@@ -45,10 +45,7 @@ func AssertCode(t *testing.T, got, want int) {
 }
 
 func newTestContext(requests []db.Request, users []db.User, entries []db.Entry) *context.AppContext {
-	return &context.AppContext{
-		DB:     db.NewMockDB(requests, users, entries),
-		Cookie: sessions.NewCookieStore([]byte("test-secret")),
-	}
+	return context.NewAppContext(db.NewMockDB(requests, users, entries), sessions.NewCookieStore([]byte("test-secret")))
 }
 
 // 1つのAPIエンドポイントに、1つのハンドラーをセットする

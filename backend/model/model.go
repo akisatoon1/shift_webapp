@@ -39,14 +39,14 @@ func GetRequests(ctx *context.AppContext) (GetRequestsResponse, error) {
 	var response GetRequestsResponse
 
 	// DBからシフトリクエスト一覧を取得
-	requests, err := ctx.DB.GetRequests()
+	requests, err := ctx.GetDB().GetRequests()
 	if err != nil {
 		return nil, err
 	}
 
 	// 各シフトリクエストごとに、作成者情報を取得し、レスポンス用構造体に詰める
 	for _, request := range requests {
-		user, err := ctx.DB.GetUserByID(request.CreatorID)
+		user, err := ctx.GetDB().GetUserByID(request.CreatorID)
 		if err != nil {
 			return nil, err
 		}
@@ -86,14 +86,14 @@ func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, err
 	}
 
 	// DBからエントリー一覧を取得
-	entries, err := ctx.DB.GetEntriesByRequestID(requestID)
+	entries, err := ctx.GetDB().GetEntriesByRequestID(requestID)
 	if err != nil {
 		return GetEntriesResponse{}, err
 	}
 
 	// 各エントリーごとに、ユーザー情報を取得し、レスポンス用構造体に詰める
 	for _, entry := range entries {
-		user, err := ctx.DB.GetUserByID(entry.UserID)
+		user, err := ctx.GetDB().GetUserByID(entry.UserID)
 		if err != nil {
 			return GetEntriesResponse{}, err
 		}
@@ -134,7 +134,7 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 	}
 
 	// DBに保存
-	requestID, err := ctx.DB.CreateRequest(request.CreatorID, startDate, endDate, deadline)
+	requestID, err := ctx.GetDB().CreateRequest(request.CreatorID, startDate, endDate, deadline)
 	if err != nil {
 		return PostRequestsResponse{}, err
 	}
@@ -184,7 +184,7 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	// 全てのエントリーを作成
 	for _, entry := range entries.Entries {
 		date, _ := time.Parse(time.DateOnly, entry.Date)
-		entryID, err := ctx.DB.CreateEntry(requestID, entry.UserID, date, entry.Hour)
+		entryID, err := ctx.GetDB().CreateEntry(requestID, entry.UserID, date, entry.Hour)
 		if err != nil {
 			return PostEntriesResponse{}, err
 		}
