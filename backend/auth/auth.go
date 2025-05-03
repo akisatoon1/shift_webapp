@@ -6,6 +6,30 @@ import (
 	"net/http"
 )
 
+// TODO: user not foundのエラーとdbエラーを識別
+// TODO: パスワードのハッシュ化
+
+func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, loginID string, password string) error {
+	// login_idとpasswordを比較
+	user, err := ctx.DB.GetUserByLoginID(loginID)
+	if err != nil {
+		return errors.New("invalid login_id or password")
+	}
+
+	if user.Password != password {
+		return errors.New("invalid login_id or password")
+	}
+
+	// 成功時はセッションを作成し、Cookieに保存
+	session, _ := ctx.Cookie.Get(r, "login_session")
+	if session == nil {
+		return errors.New("session is nil")
+	}
+
+	session.Values["user_id"] = user.ID
+	return session.Save(r, w)
+}
+
 func Logout(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) error {
 	session, _ := ctx.Cookie.Get(r, "login_session")
 

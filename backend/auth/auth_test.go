@@ -117,3 +117,43 @@ func TestLogout(t *testing.T) {
 		t.Errorf("session MaxAge should be -1 after logout, got %d", session2.Options.MaxAge)
 	}
 }
+
+func TestLogin(t *testing.T) {
+	user := db.User{ID: 42, LoginID: "testuser", Password: "pass123", Role: 0}
+	ctx := newTestContextWithUser(user)
+	store := sessions.NewCookieStore([]byte("test-secret"))
+	ctx.Cookie = store
+
+	// --- 正常系: 正しいloginIDとpassword ---
+	req := httptest.NewRequest("POST", "/login", nil)
+	rr := httptest.NewRecorder()
+	err := Login(ctx, rr, req, "testuser", "pass123")
+	if err != nil {
+		t.Errorf("Login returned error: %v", err)
+	}
+
+	// セッションにuser_idがセットされているか確認
+	req2 := httptest.NewRequest("GET", "/", nil)
+	for _, cookie := range rr.Result().Cookies() {
+		req2.AddCookie(cookie)
+	}
+	session, _ := store.Get(req2, "login_session")
+	userID, ok := session.Values["user_id"]
+	if !ok || userID != 42 {
+		t.Errorf("user_id should be 42 in session, got %v", userID)
+	}
+
+	// --- 異常系: loginIDが存在しない ---
+	rr2 := httptest.NewRecorder()
+	err2 := Login(ctx, rr2, req, "notfound", "pass123")
+	if err2 == nil {
+		t.Errorf("want error for invalid loginID, got nil")
+	}
+
+	// --- 異常系: パスワードが間違っている ---
+	rr3 := httptest.NewRecorder()
+	err3 := Login(ctx, rr3, req, "testuser", "wrongpass")
+	if err3 == nil {
+		t.Errorf("want error for wrong password, got nil")
+	}
+}
