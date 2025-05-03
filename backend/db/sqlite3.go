@@ -42,6 +42,19 @@ func (db *Sqlite3DB) GetUserByID(id int) (User, error) {
 	return user, nil
 }
 
+// login_idでユーザーを取得
+func (db *Sqlite3DB) GetUserByLoginID(loginID string) (User, error) {
+	var user User
+	row := db.Conn.QueryRow("SELECT id, login_id, password, name, role, created_at FROM users WHERE login_id = ?", loginID)
+	var createdAt string
+	err := row.Scan(&user.ID, &user.LoginID, &user.Password, &user.Name, &user.Role, &createdAt)
+	if err != nil {
+		return User{}, err
+	}
+	user.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
+	return user, nil
+}
+
 // 全リクエストを取得
 func (db *Sqlite3DB) GetRequests() ([]Request, error) {
 	rows, err := db.Conn.Query("SELECT id, creator_id, start_date, end_date, deadline, created_at FROM requests")

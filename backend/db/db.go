@@ -32,6 +32,7 @@ type Entry struct {
 
 type DB interface {
 	GetUserByID(id int) (User, error)
+	GetUserByLoginID(loginID string) (User, error)
 	GetRequests() ([]Request, error)
 	GetEntriesByRequestID(requestID int) ([]Entry, error)
 	CreateRequest(creatorID int, startDate time.Time, endDate time.Time, deadline time.Time) (int, error)

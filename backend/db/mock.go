@@ -25,6 +25,15 @@ func (m *mockDB) GetUserByID(id int) (User, error) {
 	return User{}, errors.New("user not found")
 }
 
+func (m *mockDB) GetUserByLoginID(loginID string) (User, error) {
+	for _, user := range m.Users {
+		if user.LoginID == loginID {
+			return user, nil
+		}
+	}
+	return User{}, errors.New("user not found")
+}
+
 func (m *mockDB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	entries := []Entry{}
 	for _, entry := range m.Entries {
