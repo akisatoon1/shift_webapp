@@ -40,7 +40,7 @@
 ### DELETE /session
 **ログアウトする**
 #### Response
-`204 No Content`
+`200 OK`
 
 ### GET /requests
 **リクエスト一覧を返す**
