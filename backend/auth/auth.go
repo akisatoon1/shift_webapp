@@ -44,18 +44,18 @@ func Logout(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) err
 
 // get user id from session.
 // return false if user is not logged in or invalid cookie.
-func GetUserID(ctx *context.AppContext, r *http.Request) (bool, int) {
+func GetUserID(ctx *context.AppContext, r *http.Request) (int, bool) {
 	session, _ := ctx.GetSessionStore().Get(r, "login_session")
 	if session == nil || session.IsNew {
-		return false, -1
+		return -1, false
 	}
 
 	userID, ok := session.Values["user_id"]
 	if !ok {
-		return false, -1
+		return -1, false
 	}
 
-	return true, userID.(int)
+	return userID.(int), true
 }
 
 // 権限ビット定数

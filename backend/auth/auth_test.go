@@ -31,14 +31,14 @@ func TestGetUserID(t *testing.T) {
 	}
 
 	// テスト実行
-	ok, userID := GetUserID(ctx, req2)
+	userID, ok := GetUserID(ctx, req2)
 	if !ok || userID != 42 {
 		t.Errorf("want ok=true, userID=42, got ok=%v, userID=%v", ok, userID)
 	}
 
 	// --- 異常系: セッションが存在しない場合 ---
 	req3 := httptest.NewRequest("GET", "/", nil)
-	ok2, userID2 := GetUserID(ctx, req3)
+	userID2, ok2 := GetUserID(ctx, req3)
 	if ok2 || userID2 != -1 {
 		t.Errorf("want ok=false, userID=-1, got ok=%v, userID=%v", ok2, userID2)
 	}
