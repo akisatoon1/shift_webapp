@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/auth"
 	"backend/context"
 	"backend/db"
 	"bytes"
@@ -44,6 +45,28 @@ func AssertCode(t *testing.T, got, want int) {
 	}
 }
 
+// ログインしてCookieを取得するヘルパー関数
+func getLoginCookies(appCtx *context.AppContext, loginID, password string) []*http.Cookie {
+	loginBody := map[string]string{
+		"login_id": loginID,
+		"password": password,
+	}
+	jsonBody, _ := json.Marshal(loginBody)
+	loginReq := httptest.NewRequest("POST", "/login", bytes.NewBuffer(jsonBody))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginW := httptest.NewRecorder()
+	loginMux := setHandlerToEndpoint(appCtx, "POST /login", LoginRequest)
+	loginMux.ServeHTTP(loginW, loginReq)
+	return loginW.Result().Cookies()
+}
+
+// リクエストにCookieをセットするヘルパー関数
+func addCookiesToRequest(req *http.Request, cookies []*http.Cookie) {
+	for _, cookie := range cookies {
+		req.AddCookie(cookie)
+	}
+}
+
 func newTestContext(requests []db.Request, users []db.User, entries []db.Entry) *context.AppContext {
 	return context.NewAppContext(db.NewMockDB(requests, users, entries), sessions.NewCookieStore([]byte("test-secret")))
 }
@@ -62,13 +85,17 @@ func TestGetRequestsHandler(t *testing.T) {
 			{ID: 2, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 		},
 		[]db.User{
-			{ID: 2, Name: "テストマネージャー"},
+			{ID: 2, LoginID: "test_user", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Entry{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests", GetRequestsRequest)
 
+	// ログイン用のCookieを取得
+	cookies := getLoginCookies(appCtx, "test_user", "password")
+
 	req := httptest.NewRequest("GET", "/requests", nil)
+	addCookiesToRequest(req, cookies)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -103,8 +130,8 @@ func TestGetEntriesHandler(t *testing.T) {
 			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 		},
 		[]db.User{
-			{ID: 1, Name: "テストユーザー1"},
-			{ID: 2, Name: "テストユーザー2"},
+			{ID: 1, LoginID: "test_user1", Password: "password", Name: "テストユーザー1", Role: auth.RoleEmployee},
+			{ID: 2, LoginID: "test_user2", Password: "password", Name: "テストユーザー2", Role: auth.RoleEmployee},
 		},
 		[]db.Entry{
 			{ID: 1, RequestID: 1, UserID: 1, Date: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Hour: 8},
@@ -113,7 +140,11 @@ func TestGetEntriesHandler(t *testing.T) {
 	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}/entries", GetEntriesRequest)
 
+	// ログイン用のCookieを取得
+	cookies := getLoginCookies(appCtx, "test_user1", "password")
+
 	req := httptest.NewRequest("GET", "/requests/1/entries", nil)
+	addCookiesToRequest(req, cookies)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -144,10 +175,15 @@ func TestGetEntriesHandler(t *testing.T) {
 func TestPostRequestsHandler(t *testing.T) {
 	appCtx := newTestContext(
 		[]db.Request{},
-		[]db.User{},
+		[]db.User{
+			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager},
+		},
 		[]db.Entry{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "POST /requests", PostRequestsRequest)
+
+	// ログイン用のCookieを取得
+	cookies := getLoginCookies(appCtx, "test_user", "password")
 
 	requestBody := map[string]string{
 		"start_date": "2024-06-01",
@@ -158,6 +194,7 @@ func TestPostRequestsHandler(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/requests", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	addCookiesToRequest(req, cookies)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -176,10 +213,15 @@ func TestPostEntriesHandler(t *testing.T) {
 		[]db.Request{
 			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 		},
-		[]db.User{},
+		[]db.User{
+			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー", Role: auth.RoleEmployee},
+		},
 		[]db.Entry{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/entries", PostEntriesRequest)
+
+	// ログイン用のCookieを取得
+	cookies := getLoginCookies(appCtx, "test_user", "password")
 
 	requestBody := []map[string]interface{}{
 		{
@@ -196,6 +238,7 @@ func TestPostEntriesHandler(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/requests/1/entries", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	addCookiesToRequest(req, cookies)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -269,22 +312,11 @@ func TestLogoutHandler(t *testing.T) {
 	mux := setHandlerToEndpoint(appCtx, "DELETE /session", LogoutRequest)
 
 	// まずloginしてCookie取得
-	loginBody := map[string]string{
-		"login_id": "test_user",
-		"password": "password",
-	}
-	jsonBody, _ := json.Marshal(loginBody)
-	loginReq := httptest.NewRequest("POST", "/login", bytes.NewBuffer(jsonBody))
-	loginReq.Header.Set("Content-Type", "application/json")
-	loginMux := setHandlerToEndpoint(appCtx, "POST /login", LoginRequest)
-	loginW := httptest.NewRecorder()
-	loginMux.ServeHTTP(loginW, loginReq)
+	cookies := getLoginCookies(appCtx, "test_user", "password")
 
 	// loginで得たCookieをlogoutリクエストに付与
 	logoutReq := httptest.NewRequest("DELETE", "/session", nil)
-	for _, c := range loginW.Result().Cookies() {
-		logoutReq.AddCookie(c)
-	}
+	addCookiesToRequest(logoutReq, cookies)
 	logoutW := httptest.NewRecorder()
 	mux.ServeHTTP(logoutW, logoutReq)
 	AssertCode(t, logoutW.Code, http.StatusOK)

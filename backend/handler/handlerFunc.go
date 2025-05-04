@@ -40,6 +40,11 @@ func LogoutRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Reque
 }
 
 func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// ログインユーザのみ認可
+	if _, isLoggedIn := auth.GetUserID(ctx, r); !isLoggedIn {
+		return NewAppError(nil, "GetRequestsRequest: ログインしていません", http.StatusUnauthorized)
+	}
+
 	requests, err := model.GetRequests(ctx)
 	if err != nil {
 		return NewAppError(err, "GetRequestsRequest: シフトリクエストの取得に失敗しました", http.StatusInternalServerError)
@@ -49,6 +54,11 @@ func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 }
 
 func GetEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// ログインユーザのみ認可
+	if _, isLoggedIn := auth.GetUserID(ctx, r); !isLoggedIn {
+		return NewAppError(nil, "GetEntriesRequest: ログインしていません", http.StatusUnauthorized)
+	}
+
 	requestId := r.PathValue("id")
 	requestIdInt, err := strconv.Atoi(requestId)
 	if err != nil {
@@ -64,6 +74,21 @@ func GetEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 }
 
 func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// ログインしているユーザーのIDを取得する
+	userID, isLoggedIn := auth.GetUserID(ctx, r)
+	if !isLoggedIn {
+		return NewAppError(nil, "PostRequestsRequest: ログインしていません", http.StatusUnauthorized)
+	}
+
+	// ログインしているユーザーが従業員であるか確認する
+	isUserManager, err := auth.IsManager(ctx, userID)
+	if err != nil {
+		return NewAppError(err, "PostRequestsRequest: 従業員であるか確認に失敗しました", http.StatusInternalServerError)
+	}
+	if !isUserManager {
+		return NewAppError(nil, "PostRequestsRequest: マネージャーではないユーザーがシフトリクエストを作成しようとしています", http.StatusForbidden)
+	}
+
 	// リクエストボディの形式を定義する
 	type Body struct {
 		StartDate string `json:"start_date"`
@@ -79,7 +104,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 
 	// 新しいシフトリクエストを作成する
 	response, err := model.CreateRequest(ctx, model.NewRequest{
-		CreatorID: 2, // TODO: ログインしているユーザーのIDを取得する
+		CreatorID: userID,
 		StartDate: body.StartDate,
 		EndDate:   body.EndDate,
 		Deadline:  body.Deadline,
@@ -94,6 +119,21 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 }
 
 func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// ログインしているユーザーのIDを取得する
+	userID, isLoggedIn := auth.GetUserID(ctx, r)
+	if !isLoggedIn {
+		return NewAppError(nil, "PostEntriesRequest: ログインしていません", http.StatusUnauthorized)
+	}
+
+	// ログインしているユーザーが従業員であるか確認する
+	isUserEmployee, err := auth.IsEmployee(ctx, userID)
+	if err != nil {
+		return NewAppError(err, "PostEntriesRequest: 従業員であるか確認に失敗しました", http.StatusInternalServerError)
+	}
+	if !isUserEmployee {
+		return NewAppError(nil, "PostEntriesRequest: 従業員ではないユーザーがシフトリクエストのエントリーを作成しようとしています", http.StatusForbidden)
+	}
+
 	// シフトリクエストのIDを取得する
 	// 整数ではない場合はエラーを返す
 	requestId := r.PathValue("id")
@@ -121,7 +161,7 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	}
 	for _, entry := range body {
 		entries.Entries = append(entries.Entries, model.NewEntry{
-			UserID: 1, // TODO: ログインしているユーザーのIDを取得する
+			UserID: userID,
 			Date:   entry.Date,
 			Hour:   entry.Hour,
 		})
