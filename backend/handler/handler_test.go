@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/sessions"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // TODO
@@ -79,13 +80,14 @@ func setHandlerToEndpoint(appCtx *context.AppContext, endpoint string, handlerFn
 }
 
 func TestGetRequestsHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
 			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 			{ID: 2, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 		},
 		[]db.User{
-			{ID: 2, LoginID: "test_user", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager},
+			{ID: 2, LoginID: "test_user", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Entry{},
 	)
@@ -125,13 +127,14 @@ func TestGetRequestsHandler(t *testing.T) {
 }
 
 func TestGetEntriesHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
 			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 		},
 		[]db.User{
-			{ID: 1, LoginID: "test_user1", Password: "password", Name: "テストユーザー1", Role: auth.RoleEmployee},
-			{ID: 2, LoginID: "test_user2", Password: "password", Name: "テストユーザー2", Role: auth.RoleEmployee},
+			{ID: 1, LoginID: "test_user1", Password: string(hashedPassword), Name: "テストユーザー1", Role: auth.RoleEmployee},
+			{ID: 2, LoginID: "test_user2", Password: string(hashedPassword), Name: "テストユーザー2", Role: auth.RoleEmployee},
 		},
 		[]db.Entry{
 			{ID: 1, RequestID: 1, UserID: 1, Date: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Hour: 8},
@@ -173,10 +176,11 @@ func TestGetEntriesHandler(t *testing.T) {
 }
 
 func TestPostRequestsHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{},
 		[]db.User{
-			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager},
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Entry{},
 	)
@@ -209,12 +213,13 @@ func TestPostRequestsHandler(t *testing.T) {
 }
 
 func TestPostEntriesHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
 			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
 		},
 		[]db.User{
-			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー", Role: auth.RoleEmployee},
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー", Role: auth.RoleEmployee},
 		},
 		[]db.Entry{},
 	)
@@ -254,10 +259,11 @@ func TestPostEntriesHandler(t *testing.T) {
 }
 
 func TestLoginHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{},
 		[]db.User{
-			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー"},
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー"},
 		},
 		[]db.Entry{},
 	)
@@ -302,10 +308,11 @@ func TestLoginHandler(t *testing.T) {
 }
 
 func TestLogoutHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{},
 		[]db.User{
-			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー"},
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー"},
 		},
 		[]db.Entry{},
 	)
