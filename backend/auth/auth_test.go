@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/sessions"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestGetUserID(t *testing.T) {
@@ -117,7 +118,8 @@ func TestLogout(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
-	user := db.User{ID: 42, LoginID: "testuser", Password: "pass123", Role: 0}
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("pass123"), bcrypt.DefaultCost)
+	user := db.User{ID: 42, LoginID: "testuser", Password: string(hashedPassword), Role: 0}
 	store := sessions.NewCookieStore([]byte("test-secret"))
 	ctx := newTestContext(user, store)
 

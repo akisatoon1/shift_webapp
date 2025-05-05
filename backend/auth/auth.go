@@ -5,10 +5,11 @@ import (
 	"errors"
 	"net/http"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // TODO: user not foundのエラーとdbエラーを識別
-// TODO: パスワードのハッシュ化
 
 func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, loginID string, password string) error {
 	// login_idとpasswordを比較
@@ -17,7 +18,7 @@ func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, logi
 		return errors.New("invalid login_id or password")
 	}
 
-	if user.Password != password {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return errors.New("invalid login_id or password")
 	}
 
