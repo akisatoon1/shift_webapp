@@ -6,8 +6,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// TODO: 外部からアクセスできないようにする
-
 // アプリケーション全体で利用されるデータを管理
 type AppContext struct {
 	db           db.DB

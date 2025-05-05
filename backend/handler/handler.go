@@ -5,9 +5,6 @@ import (
 	"net/http"
 )
 
-// TODO
-// ログインしているユーザーのIDを取得する
-
 type HandlerFuncWithContext func(*context.AppContext, http.ResponseWriter, *http.Request) *AppError
 
 type Handler struct {
