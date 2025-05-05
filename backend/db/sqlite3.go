@@ -33,6 +33,9 @@ func (db *Sqlite3DB) GetUserByID(id int) (User, error) {
 	row := db.Conn.QueryRow("SELECT id, login_id, password, name, role, created_at FROM users WHERE id = ?", id)
 	var createdAt string
 	err := row.Scan(&user.ID, &user.LoginID, &user.Password, &user.Name, &user.Role, &createdAt)
+	if err == sql.ErrNoRows {
+		return User{}, ErrUserNotFound
+	}
 	if err != nil {
 		return User{}, err
 	}
@@ -46,6 +49,9 @@ func (db *Sqlite3DB) GetUserByLoginID(loginID string) (User, error) {
 	row := db.Conn.QueryRow("SELECT id, login_id, password, name, role, created_at FROM users WHERE login_id = ?", loginID)
 	var createdAt string
 	err := row.Scan(&user.ID, &user.LoginID, &user.Password, &user.Name, &user.Role, &createdAt)
+	if err == sql.ErrNoRows {
+		return User{}, ErrUserNotFound
+	}
 	if err != nil {
 		return User{}, err
 	}

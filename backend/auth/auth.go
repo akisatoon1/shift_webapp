@@ -2,6 +2,7 @@ package auth
 
 import (
 	"backend/context"
+	"backend/db"
 	"errors"
 	"net/http"
 	"time"
@@ -9,13 +10,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO: user not foundのエラーとdbエラーを識別
-
 func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, loginID string, password string) error {
 	// login_idとpasswordを比較
 	user, err := ctx.GetDB().GetUserByLoginID(loginID)
 	if err != nil {
-		return errors.New("invalid login_id or password")
+		if err == db.ErrUserNotFound {
+			return errors.New("invalid login_id or password")
+		}
+		return err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
@@ -71,6 +73,9 @@ const (
 func IsEmployee(ctx *context.AppContext, userID int) (bool, error) {
 	user, err := ctx.GetDB().GetUserByID(userID)
 	if err != nil {
+		if err == db.ErrUserNotFound {
+			return false, nil
+		}
 		return false, err
 	}
 	return (user.Role & RoleEmployee) != 0, nil
@@ -80,6 +85,9 @@ func IsEmployee(ctx *context.AppContext, userID int) (bool, error) {
 func IsManager(ctx *context.AppContext, userID int) (bool, error) {
 	user, err := ctx.GetDB().GetUserByID(userID)
 	if err != nil {
+		if err == db.ErrUserNotFound {
+			return false, nil
+		}
 		return false, err
 	}
 	return (user.Role & RoleManager) != 0, nil
