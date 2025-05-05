@@ -7,8 +7,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// TODO: トランザクション管理
-
 // Sqlite3DBはDBインターフェースのsqlite3実装
 // フィールドConnは*sql.DB型
 type Sqlite3DB struct {
@@ -135,8 +133,8 @@ func (db *Sqlite3DB) CreateRequest(creatorID int, startDate time.Time, endDate t
 	return int(id), nil
 }
 
-// 新しいエントリーを作成
-func (db *Sqlite3DB) CreateEntry(requestID int, userID int, date time.Time, hour int) (int, error) {
+// 新しい1つのエントリーを作成
+func (db *Sqlite3DB) createEntry(requestID int, userID int, date time.Time, hour int) (int, error) {
 	res, err := db.Conn.Exec(
 		"INSERT INTO entries (request_id, user_id, date, hour) VALUES (?, ?, ?, ?)",
 		requestID, userID, date.Format(time.DateOnly), hour,
@@ -150,4 +148,27 @@ func (db *Sqlite3DB) CreateEntry(requestID int, userID int, date time.Time, hour
 		return -1, err
 	}
 	return int(id), nil
+}
+
+// 新しいエントリーを作成
+func (db *Sqlite3DB) CreateEntries(entries []Entry) ([]int, error) {
+	tx, err := db.Conn.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var ids []int
+	for _, entry := range entries {
+		id, err := db.createEntry(entry.RequestID, entry.UserID, entry.Date, entry.Hour)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }

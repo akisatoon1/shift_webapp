@@ -7,6 +7,7 @@ package model
 import (
 	"backend/auth"
 	"backend/context"
+	"backend/db"
 	"errors"
 	"time"
 )
@@ -209,7 +210,7 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	startDate := request.StartDate
 	endDate := request.EndDate
 
-	// 全てのエントリーを作成
+	// 全てのエントリーについて、バリデーションを行う
 	for _, entry := range entries.Entries {
 		// start_date <= date <= end_date のバリデーション
 		date, _ := time.Parse(time.DateOnly, entry.Date)
@@ -218,12 +219,29 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 		}
 
 		// TODO: hourのvalidation
+	}
 
-		// DBに保存
-		entryID, err := ctx.GetDB().CreateEntry(requestID, entry.UserID, date, entry.Hour)
-		if err != nil {
-			return PostEntriesResponse{}, err
-		}
+	// エントリーをdbに保存するために
+	// db.Entry型に変換
+	dbEntries := []db.Entry{}
+	for _, entry := range entries.Entries {
+		date, _ := time.Parse(time.DateOnly, entry.Date)
+		dbEntries = append(dbEntries, db.Entry{
+			RequestID: entries.ID,
+			UserID:    entry.UserID,
+			Date:      date,
+			Hour:      entry.Hour,
+		})
+	}
+
+	// DBに保存
+	entryIDs, err := ctx.GetDB().CreateEntries(dbEntries)
+	if err != nil {
+		return PostEntriesResponse{}, err
+	}
+
+	// レスポンスを作成
+	for _, entryID := range entryIDs {
 		response.Entries = append(response.Entries, PostEntriesResponseEntry{ID: entryID})
 	}
 

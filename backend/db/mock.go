@@ -58,9 +58,14 @@ func (m *mockDB) CreateRequest(creatorID int, startDate time.Time, endDate time.
 	return len(m.Requests), nil
 }
 
-func (m *mockDB) CreateEntry(requestID int, userID int, date time.Time, hour int) (int, error) {
-	m.Entries = append(m.Entries, Entry{ID: len(m.Entries) + 1, RequestID: requestID, UserID: userID, Date: date, Hour: hour})
-	return len(m.Entries), nil
+func (m *mockDB) CreateEntries(entries []Entry) ([]int, error) {
+	lastID := len(m.Entries)
+	ids := []int{}
+	for i := range entries {
+		m.Entries = append(m.Entries, entries[i])
+		ids = append(ids, lastID+1+i)
+	}
+	return ids, nil
 }
 
 // テスト用データを入れたモックDBを生成
