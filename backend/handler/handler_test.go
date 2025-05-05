@@ -39,10 +39,10 @@ func AssertRes(t *testing.T, got []byte, wantJSON string) {
 }
 
 // HTTPステータスコードを評価するヘルパー関数
-func AssertCode(t *testing.T, got, want int) {
+func AssertCode(t *testing.T, got, want int, body []byte) {
 	t.Helper()
 	if got != want {
-		t.Fatalf("want status code %d, got %d", want, got)
+		t.Fatalf("want status code %d, got %d\nresponse body: %s", want, got, string(body))
 	}
 }
 
@@ -101,7 +101,7 @@ func TestGetRequestsHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	AssertCode(t, w.Code, http.StatusOK)
+	AssertCode(t, w.Code, http.StatusOK, w.Body.Bytes())
 
 	wantJSON := `
 	[
@@ -151,7 +151,7 @@ func TestGetEntriesHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	AssertCode(t, w.Code, http.StatusOK)
+	AssertCode(t, w.Code, http.StatusOK, w.Body.Bytes())
 
 	wantJSON := `
 	{
@@ -202,7 +202,7 @@ func TestPostRequestsHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	AssertCode(t, w.Code, http.StatusCreated)
+	AssertCode(t, w.Code, http.StatusCreated, w.Body.Bytes())
 
 	wantJSON := `
 	{
@@ -247,7 +247,7 @@ func TestPostEntriesHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	AssertCode(t, w.Code, http.StatusCreated)
+	AssertCode(t, w.Code, http.StatusCreated, w.Body.Bytes())
 
 	wantJSON := `
 	{
@@ -280,7 +280,7 @@ func TestLoginHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
-	AssertCode(t, w.Code, http.StatusOK)
+	AssertCode(t, w.Code, http.StatusOK, w.Body.Bytes())
 
 	// セッションCookieがセットされているか
 	cookies := w.Result().Cookies()
@@ -304,7 +304,7 @@ func TestLoginHandler(t *testing.T) {
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
 	mux.ServeHTTP(w2, req2)
-	AssertCode(t, w2.Code, http.StatusUnauthorized)
+	AssertCode(t, w2.Code, http.StatusUnauthorized, w2.Body.Bytes())
 }
 
 func TestLogoutHandler(t *testing.T) {
@@ -326,7 +326,7 @@ func TestLogoutHandler(t *testing.T) {
 	addCookiesToRequest(logoutReq, cookies)
 	logoutW := httptest.NewRecorder()
 	mux.ServeHTTP(logoutW, logoutReq)
-	AssertCode(t, logoutW.Code, http.StatusOK)
+	AssertCode(t, logoutW.Code, http.StatusOK, logoutW.Body.Bytes())
 
 	// セッションが無効化されているか
 	// MaxAge=-1のCookieが返る
