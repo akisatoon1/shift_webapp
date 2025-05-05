@@ -1,6 +1,7 @@
 package model
 
 import (
+	"backend/auth"
 	"backend/context"
 	"backend/db"
 	"reflect"
@@ -74,7 +75,7 @@ func TestGetEntries(t *testing.T) {
 func TestCreateRequest(t *testing.T) {
 	ctx := newTestContext(
 		[]db.User{
-			{ID: 2, Name: "テストマネージャー"},
+			{ID: 2, Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Request{},
 		[]db.Entry{},
@@ -96,7 +97,9 @@ func TestCreateEntries(t *testing.T) {
 		[]db.User{
 			{ID: 1, Name: "テストユーザー1"},
 		},
-		[]db.Request{},
+		[]db.Request{
+			{ID: 1, CreatorID: 2, StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), Deadline: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC), CreatedAt: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
+		},
 		[]db.Entry{},
 	)
 	got, err := CreateEntries(ctx, NewEntries{ID: 1, Entries: []NewEntry{{UserID: 1, Date: "2024-06-01", Hour: 8}, {UserID: 1, Date: "2024-06-01", Hour: 9}}})

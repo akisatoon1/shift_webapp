@@ -5,13 +5,14 @@ package model
 */
 
 import (
+	"backend/auth"
 	"backend/context"
 	"errors"
 	"time"
 )
 
 // TODO
-// validation
+// create entriesのvalidation
 // time.Timeの形式がそれぞれ違うのが面倒
 
 // APIレスポンスのcreatorやuserフィールドで利用される
@@ -80,6 +81,11 @@ type GetEntriesResponse struct {
 
 // 指定したシフトリクエストIDに紐づくエントリー一覧を取得し、APIレスポンス用の構造体に変換して返す
 func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, error) {
+	// シフトリクエストIDが存在するかチェック
+	if _, err := ctx.GetDB().GetRequestByID(requestID); err != nil {
+		return GetEntriesResponse{}, err
+	}
+
 	// APIレスポンスのための、エントリーに紐づいたシフトリクエストID
 	response := GetEntriesResponse{
 		ID: requestID,
@@ -124,6 +130,15 @@ type PostRequestsResponse struct {
 
 // 新しいシフトリクエストを作成する
 func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsResponse, error) {
+	// ログインしているユーザーが従業員であるか確認する
+	isUserManager, err := auth.IsManager(ctx, request.CreatorID)
+	if err != nil {
+		return PostRequestsResponse{}, err
+	}
+	if !isUserManager {
+		return PostRequestsResponse{}, errors.New("マネージャーではないユーザーがシフトリクエストを作成しようとしています")
+	}
+
 	// 日付の整合性チェック
 	// 期限 <= 開始日 <= 終了日 でなければいけない
 	deadline, _ := time.Parse(time.DateOnly, request.Deadline)
@@ -171,7 +186,12 @@ type PostEntriesResponse struct {
 
 // エントリーを作成する
 func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResponse, error) {
-	// TODO: start_date <= date <= end_date のバリデーション
+	// TODO: ログインしているユーザーが従業員であるか確認する
+
+	// シフトリクエストIDが存在するかチェック
+	if _, err := ctx.GetDB().GetRequestByID(entries.ID); err != nil {
+		return PostEntriesResponse{}, err
+	}
 
 	// エントリーを提出するシフトリクエストのID
 	requestID := entries.ID
@@ -181,9 +201,25 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 		Entries: []PostEntriesResponseEntry{},
 	}
 
+	// start_date <= date <= end_date のバリデーションのため
+	request, err := ctx.GetDB().GetRequestByID(entries.ID)
+	if err != nil {
+		return PostEntriesResponse{}, err
+	}
+	startDate := request.StartDate
+	endDate := request.EndDate
+
 	// 全てのエントリーを作成
 	for _, entry := range entries.Entries {
+		// start_date <= date <= end_date のバリデーション
 		date, _ := time.Parse(time.DateOnly, entry.Date)
+		if !((startDate.Before(date) || startDate.Equal(date)) && (date.Before(endDate) || date.Equal(endDate))) {
+			return PostEntriesResponse{}, errors.New("must be start_date <= date <= end_date")
+		}
+
+		// TODO: hourのvalidation
+
+		// DBに保存
 		entryID, err := ctx.GetDB().CreateEntry(requestID, entry.UserID, date, entry.Hour)
 		if err != nil {
 			return PostEntriesResponse{}, err

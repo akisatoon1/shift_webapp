@@ -80,15 +80,6 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 		return NewAppError(nil, "PostRequestsRequest: ログインしていません", http.StatusUnauthorized)
 	}
 
-	// ログインしているユーザーが従業員であるか確認する
-	isUserManager, err := auth.IsManager(ctx, userID)
-	if err != nil {
-		return NewAppError(err, "PostRequestsRequest: 従業員であるか確認に失敗しました", http.StatusInternalServerError)
-	}
-	if !isUserManager {
-		return NewAppError(nil, "PostRequestsRequest: マネージャーではないユーザーがシフトリクエストを作成しようとしています", http.StatusForbidden)
-	}
-
 	// リクエストボディの形式を定義する
 	type Body struct {
 		StartDate string `json:"start_date"`
