@@ -4,6 +4,7 @@ import (
 	"backend/context"
 	"errors"
 	"net/http"
+	"time"
 )
 
 // TODO: user not foundのエラーとdbエラーを識別
@@ -27,6 +28,7 @@ func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, logi
 	}
 
 	session.Values["user_id"] = user.ID
+	session.Options.MaxAge = int((time.Hour * 3).Seconds())
 	return session.Save(r, w)
 }
 
