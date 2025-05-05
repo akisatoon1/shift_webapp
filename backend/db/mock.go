@@ -16,6 +16,15 @@ func (m *mockDB) GetRequests() ([]Request, error) {
 	return m.Requests, nil
 }
 
+func (m *mockDB) GetRequestByID(id int) (Request, error) {
+	for _, request := range m.Requests {
+		if request.ID == id {
+			return request, nil
+		}
+	}
+	return Request{}, errors.New("request not found")
+}
+
 func (m *mockDB) GetUserByID(id int) (User, error) {
 	for _, user := range m.Users {
 		if user.ID == id {

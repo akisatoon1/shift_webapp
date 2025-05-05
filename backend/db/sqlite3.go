@@ -80,6 +80,22 @@ func (db *Sqlite3DB) GetRequests() ([]Request, error) {
 	return requests, nil
 }
 
+// 指定リクエストIDのリクエストを取得
+func (db *Sqlite3DB) GetRequestByID(id int) (Request, error) {
+	var req Request
+	row := db.Conn.QueryRow("SELECT id, creator_id, start_date, end_date, deadline, created_at FROM requests WHERE id = ?", id)
+	var startDate, endDate, deadline, createdAt string
+	err := row.Scan(&req.ID, &req.CreatorID, &startDate, &endDate, &deadline, &createdAt)
+	if err != nil {
+		return Request{}, err
+	}
+	req.StartDate, _ = time.Parse(time.DateOnly, startDate)
+	req.EndDate, _ = time.Parse(time.DateOnly, endDate)
+	req.Deadline, _ = time.Parse(time.DateOnly, deadline)
+	req.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
+	return req, nil
+}
+
 // 指定リクエストIDのエントリー一覧を取得
 func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	rows, err := db.Conn.Query("SELECT id, request_id, user_id, date, hour FROM entries WHERE request_id = ?", requestID)
