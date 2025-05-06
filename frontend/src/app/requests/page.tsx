@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Request = {
     id: number;
@@ -22,6 +23,7 @@ export default function RequestsPage() {
     const [deadline, setDeadline] = useState("");
     const [createError, setCreateError] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
+    const router = useRouter();
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -117,7 +119,11 @@ export default function RequestsPage() {
                         </thead>
                         <tbody>
                             {requests.map((req) => (
-                                <tr key={req.id} className="hover:bg-gray-50">
+                                <tr
+                                    key={req.id}
+                                    className="hover:bg-blue-50 cursor-pointer"
+                                    onClick={() => router.push(`/requests/${req.id}`)}
+                                >
                                     <td className="border px-2 py-1 text-center">{req.id}</td>
                                     <td className="border px-2 py-1">{req.creator.name}</td>
                                     <td className="border px-2 py-1">{req.start_date}</td>
