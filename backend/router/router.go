@@ -5,6 +5,7 @@ import (
 	"backend/handler"
 	"backend/middleware"
 	"net/http"
+	"path/filepath"
 )
 
 // ルーティング情報を表す構造体
@@ -16,10 +17,12 @@ type route struct {
 
 // ミドルウェアを適用してルーティングを設定するヘルパー関数
 func applyRoutes(ctx *context.AppContext, mux *http.ServeMux, routes []route) {
+	basePath := "/api"
 	for _, r := range routes {
 		r.handlerFn = middleware.ValidateContentType(r.handlerFn)
 		handler := handler.NewHandler(ctx, r.handlerFn)
-		mux.Handle(r.method+" "+r.pattern, handler)
+		path := filepath.Join(basePath, r.pattern)
+		mux.Handle(r.method+" "+path, handler)
 	}
 }
 
