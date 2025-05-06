@@ -4,6 +4,7 @@ import (
 	"backend/context"
 	"backend/db"
 	"backend/router"
+	"backend/test"
 	"log"
 	"net/http"
 	"os"
@@ -29,19 +30,29 @@ func main() {
 		log.Fatal("PORTが設定されていません")
 	}
 
-	// DBの初期化
-	db, err := db.NewSqlite3DB(dbPath)
-	if err != nil {
-		log.Fatal("DBの接続に失敗しました: " + err.Error())
+	mode := os.Getenv("MODE")
+	var database db.DB
+
+	if mode == "test" {
+		log.Println("テストモードで起動します(mock DB使用)")
+		database = db.NewMockDB(test.MockRequests, test.MockUsers, test.MockEntries)
+	} else {
+		log.Println("本番モードで起動します(SQLite3使用)")
+		// DBの初期化
+		sqliteDB, err := db.NewSqlite3DB(dbPath)
+		if err != nil {
+			log.Fatal("DBの接続に失敗しました: " + err.Error())
+		}
+		log.Println("DBの接続に成功しました")
+		database = sqliteDB
+		defer sqliteDB.Close()
 	}
-	log.Println("DBの接続に成功しました")
-	defer db.Close()
 
 	// セッションの初期化
 	cookie := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
 	// アプリケーション全体で使うデータを管理するコンテキストを作成
-	appCtx := context.NewAppContext(db, cookie)
+	appCtx := context.NewAppContext(database, cookie)
 
 	// ルーティングの設定
 	mux := http.NewServeMux()
