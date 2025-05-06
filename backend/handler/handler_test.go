@@ -16,9 +16,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO
-// テスト失敗時のレスポンスボディのエラーメッセージを表示する
-
 // JSON形式のレスポンスを評価するヘルパー関数
 func AssertRes(t *testing.T, got []byte, wantJSON string) {
 	t.Helper()
@@ -26,7 +23,7 @@ func AssertRes(t *testing.T, got []byte, wantJSON string) {
 	var wantInterface interface{}
 
 	if err := json.Unmarshal(got, &gotInterface); err != nil {
-		t.Fatalf("got json decode error: %v", err)
+		t.Fatalf("got json decode error: %v\ngot response body: %s", err, string(got))
 	}
 
 	if err := json.Unmarshal([]byte(wantJSON), &wantInterface); err != nil {
@@ -34,7 +31,7 @@ func AssertRes(t *testing.T, got []byte, wantJSON string) {
 	}
 
 	if !reflect.DeepEqual(gotInterface, wantInterface) {
-		t.Errorf("\ngot  %#v\nwant %#v", gotInterface, wantInterface)
+		t.Errorf("\ngot  %#v\nwant %#v\ngot response body: %s", gotInterface, wantInterface, string(got))
 	}
 }
 
