@@ -12,8 +12,11 @@ import (
 	"time"
 )
 
-// TODO
-// 謎のアノテーション
+/*
+	注意!
+	structのtagはhttp responseのjsonのkeyに利用される
+	(modelがhandlerに依存している、悪い設計です)
+*/
 
 // APIレスポンスのcreatorやuserフィールドで利用される
 type User struct {
