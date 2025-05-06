@@ -17,6 +17,8 @@ type RequestEntries = {
     entries: Entry[];
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function RequestDetailPage() {
     const params = useParams();
     const requestId = params?.request_id;
@@ -33,7 +35,7 @@ export default function RequestDetailPage() {
         setCreateError("");
         setCreateLoading(true);
         try {
-            const res = await fetch(`http://localhost:3000/api/requests/${requestId}/entries`, {
+            const res = await fetch(`${API_BASE_URL}/requests/${requestId}/entries`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -64,7 +66,7 @@ export default function RequestDetailPage() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch(`http://localhost:3000/api/requests/${requestId}/entries`, {
+            const res = await fetch(`${API_BASE_URL}/requests/${requestId}/entries`, {
                 credentials: "include",
             });
             if (!res.ok) {

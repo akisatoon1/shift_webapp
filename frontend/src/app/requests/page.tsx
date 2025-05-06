@@ -14,6 +14,8 @@ type Request = {
     created_at: string;
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function RequestsPage() {
     const [requests, setRequests] = useState<Request[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function RequestsPage() {
         setCreateError("");
         setCreateLoading(true);
         try {
-            const res = await fetch("http://localhost:3000/api/requests", {
+            const res = await fetch(`${API_BASE_URL}/requests`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -60,7 +62,7 @@ export default function RequestsPage() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch("http://localhost:3000/api/requests", {
+            const res = await fetch(`${API_BASE_URL}/requests`, {
                 credentials: "include",
             });
             if (!res.ok) {
