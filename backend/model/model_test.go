@@ -95,14 +95,14 @@ func TestCreateRequest(t *testing.T) {
 func TestCreateEntries(t *testing.T) {
 	ctx := newTestContext(
 		[]db.User{
-			{ID: 1, Name: "テストユーザー1"},
+			{ID: 1, Name: "テストユーザー1", Role: auth.RoleEmployee},
 		},
 		[]db.Request{
 			{ID: 1, CreatorID: 2, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
 		},
 		[]db.Entry{},
 	)
-	got, err := CreateEntries(ctx, NewEntries{ID: 1, Entries: []NewEntry{{UserID: 1, Date: "2024-06-01", Hour: 8}, {UserID: 1, Date: "2024-06-01", Hour: 9}}})
+	got, err := CreateEntries(ctx, NewEntries{ID: 1, UserID: 1, Entries: []NewEntry{{Date: "2024-06-01", Hour: 8}, {Date: "2024-06-01", Hour: 9}}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

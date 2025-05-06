@@ -116,15 +116,6 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 		return NewAppError(nil, "PostEntriesRequest: ログインしていません", http.StatusUnauthorized)
 	}
 
-	// ログインしているユーザーが従業員であるか確認する
-	isUserEmployee, err := auth.IsEmployee(ctx, userID)
-	if err != nil {
-		return NewAppError(err, "PostEntriesRequest: 従業員であるか確認に失敗しました", http.StatusInternalServerError)
-	}
-	if !isUserEmployee {
-		return NewAppError(nil, "PostEntriesRequest: 従業員ではないユーザーがシフトリクエストのエントリーを作成しようとしています", http.StatusForbidden)
-	}
-
 	// シフトリクエストのIDを取得する
 	// 整数ではない場合はエラーを返す
 	requestId := r.PathValue("id")
@@ -148,13 +139,13 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	// モデルに渡す形に変換する
 	entries := model.NewEntries{
 		ID:      requestIdInt,
+		UserID:  userID,
 		Entries: []model.NewEntry{},
 	}
 	for _, entry := range body {
 		entries.Entries = append(entries.Entries, model.NewEntry{
-			UserID: userID,
-			Date:   entry.Date,
-			Hour:   entry.Hour,
+			Date: entry.Date,
+			Hour: entry.Hour,
 		})
 	}
 

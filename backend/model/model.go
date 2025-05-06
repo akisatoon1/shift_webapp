@@ -13,7 +13,7 @@ import (
 )
 
 // TODO
-// create entriesのvalidation
+// 謎のアノテーション
 
 // APIレスポンスのcreatorやuserフィールドで利用される
 type User struct {
@@ -164,15 +164,15 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 
 // 新しく作成する1回分のエントリーの内容を表す
 type NewEntry struct {
-	UserID int    `json:"user_id"`
-	Date   string `json:"date"`
-	Hour   int    `json:"hour"`
+	Date string `json:"date"`
+	Hour int    `json:"hour"`
 }
 
 // 全ての新しく作成するエントリーの内容を表す
 // IDはシフトリクエストのID
 type NewEntries struct {
 	ID      int        `json:"id"`
+	UserID  int        `json:"user_id"`
 	Entries []NewEntry `json:"entries"`
 }
 
@@ -190,7 +190,14 @@ type PostEntriesResponse struct {
 
 // エントリーを作成する
 func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResponse, error) {
-	// TODO: ログインしているユーザーが従業員であるか確認する
+	// ログインしているユーザーが従業員であるか確認する
+	isUserEmployee, err := auth.IsEmployee(ctx, entries.UserID)
+	if err != nil {
+		return PostEntriesResponse{}, err
+	}
+	if !isUserEmployee {
+		return PostEntriesResponse{}, errors.New("従業員ではないユーザーがエントリーを作成しようとしています")
+	}
 
 	// シフトリクエストIDが存在するかチェック
 	if _, err := ctx.GetDB().GetRequestByID(entries.ID); err != nil {
@@ -225,7 +232,11 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 			return PostEntriesResponse{}, errors.New("must be start_date <= date <= end_date")
 		}
 
-		// TODO: hourのvalidation
+		// hourのvalidation
+		// 0 <= hour <= 23 でなければいけない
+		if !(0 <= entry.Hour && entry.Hour <= 23) {
+			return PostEntriesResponse{}, errors.New("hour must be 0 <= hour <= 23")
+		}
 	}
 
 	// エントリーをdbに保存するために
@@ -239,7 +250,7 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 		}
 		dbEntries = append(dbEntries, db.Entry{
 			RequestID: entries.ID,
-			UserID:    entry.UserID,
+			UserID:    entries.UserID,
 			Date:      date,
 			Hour:      entry.Hour,
 		})
