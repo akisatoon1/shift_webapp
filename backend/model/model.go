@@ -14,7 +14,6 @@ import (
 
 // TODO
 // create entriesのvalidation
-// time parseのvalidation
 
 // APIレスポンスのcreatorやuserフィールドで利用される
 type User struct {
@@ -142,9 +141,13 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 
 	// 日付の整合性チェック
 	// 期限 <= 開始日 <= 終了日 でなければいけない
-	deadline, _ := db.NewDateTime(request.Deadline)
-	startDate, _ := db.NewDateOnly(request.StartDate)
-	endDate, _ := db.NewDateOnly(request.EndDate)
+	deadline, err := db.NewDateTime(request.Deadline)
+	startDate, err := db.NewDateOnly(request.StartDate)
+	endDate, err := db.NewDateOnly(request.EndDate)
+	if err != nil {
+		// 時間に関するデータが定められたフォーマットではないとき
+		return PostRequestsResponse{}, err
+	}
 	if !((isBeforeOrEqual(deadline, startDate)) && (isBeforeOrEqual(startDate, endDate))) {
 		return PostRequestsResponse{}, errors.New("input date must be deadline <= start_date <= end_date")
 	}
@@ -213,7 +216,11 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	// 全てのエントリーについて、バリデーションを行う
 	for _, entry := range entries.Entries {
 		// start_date <= date <= end_date のバリデーション
-		date, _ := db.NewDateOnly(entry.Date)
+		date, err := db.NewDateOnly(entry.Date)
+		if err != nil {
+			// 日付に関するデータが定められたフォーマットではないとき
+			return PostEntriesResponse{}, err
+		}
 		if !((isBeforeOrEqual(startDate, date)) && (isBeforeOrEqual(date, endDate))) {
 			return PostEntriesResponse{}, errors.New("must be start_date <= date <= end_date")
 		}
@@ -225,7 +232,11 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	// db.Entry型に変換
 	dbEntries := []db.Entry{}
 	for _, entry := range entries.Entries {
-		date, _ := db.NewDateOnly(entry.Date)
+		date, err := db.NewDateOnly(entry.Date)
+		if err != nil {
+			// 日付に関するデータが定められたフォーマットではないとき
+			return PostEntriesResponse{}, err
+		}
 		dbEntries = append(dbEntries, db.Entry{
 			RequestID: entries.ID,
 			UserID:    entry.UserID,
