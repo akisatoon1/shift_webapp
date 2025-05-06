@@ -3,6 +3,8 @@ package test
 import (
 	"backend/auth"
 	"backend/db"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // サーバをテストモードで起動するときに使うデータ
@@ -17,9 +19,14 @@ func mustDateTime(s string) db.DateTime {
 	return d
 }
 
+func mustHashPassword(password string) string {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hashedPassword)
+}
+
 var MockUsers = []db.User{
-	{ID: 1, LoginID: "employee1", Password: "pass_employee1", Name: "テストエンプロイ1", Role: auth.RoleEmployee, CreatedAt: mustDateTime("2023-12-31 12:00:00")},
-	{ID: 2, LoginID: "manager1", Password: "pass_manager1", Name: "テストマネージャー1", Role: auth.RoleManager, CreatedAt: mustDateTime("2024-01-31 12:00:00")},
+	{ID: 1, LoginID: "employee1", Password: mustHashPassword("pass_employee1"), Name: "テストエンプロイ1", Role: auth.RoleEmployee, CreatedAt: mustDateTime("2023-12-31 12:00:00")},
+	{ID: 2, LoginID: "manager1", Password: mustHashPassword("pass_manager1"), Name: "テストマネージャー1", Role: auth.RoleManager, CreatedAt: mustDateTime("2024-01-31 12:00:00")},
 }
 
 var MockRequests = []db.Request{
