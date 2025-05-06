@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-	"time"
 )
 
 var ErrUserNotFound = errors.New("user not found")
@@ -13,23 +12,23 @@ type User struct {
 	Password  string
 	Name      string
 	Role      int
-	CreatedAt time.Time
+	CreatedAt DateTime
 }
 
 type Request struct {
 	ID        int
 	CreatorID int
-	StartDate time.Time
-	EndDate   time.Time
-	Deadline  time.Time
-	CreatedAt time.Time
+	StartDate DateOnly
+	EndDate   DateOnly
+	Deadline  DateTime
+	CreatedAt DateTime
 }
 
 type Entry struct {
 	ID        int
 	RequestID int
 	UserID    int
-	Date      time.Time
+	Date      DateOnly
 	Hour      int
 }
 
@@ -39,6 +38,6 @@ type DB interface {
 	GetRequests() ([]Request, error)
 	GetRequestByID(id int) (Request, error)
 	GetEntriesByRequestID(requestID int) ([]Entry, error)
-	CreateRequest(creatorID int, startDate time.Time, endDate time.Time, deadline time.Time) (int, error)
+	CreateRequest(creatorID int, startDate DateOnly, endDate DateOnly, deadline DateTime) (int, error)
 	CreateEntries(entries []Entry) ([]int, error)
 }

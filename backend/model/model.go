@@ -14,7 +14,7 @@ import (
 
 // TODO
 // create entriesのvalidation
-// time.Timeの形式がそれぞれ違うのが面倒
+// time parseのvalidation
 
 // APIレスポンスのcreatorやuserフィールドで利用される
 type User struct {
@@ -55,10 +55,10 @@ func GetRequests(ctx *context.AppContext) (GetRequestsResponse, error) {
 		response = append(response, Request{
 			ID:        request.ID,
 			Creator:   User{ID: user.ID, Name: user.Name},
-			StartDate: request.StartDate.Format(time.DateOnly),
-			EndDate:   request.EndDate.Format(time.DateOnly),
-			Deadline:  request.Deadline.Format(time.DateOnly),
-			CreatedAt: request.CreatedAt.Format(time.DateTime),
+			StartDate: request.StartDate.Format(),
+			EndDate:   request.EndDate.Format(),
+			Deadline:  request.Deadline.Format(),
+			CreatedAt: request.CreatedAt.Format(),
 		})
 	}
 
@@ -107,7 +107,7 @@ func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, err
 		response.Entries = append(response.Entries, Entry{
 			ID:   entry.ID,
 			User: User{ID: user.ID, Name: user.Name},
-			Date: entry.Date.Format(time.DateOnly),
+			Date: entry.Date.Format(),
 			Hour: entry.Hour,
 		})
 	}
@@ -142,10 +142,10 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 
 	// 日付の整合性チェック
 	// 期限 <= 開始日 <= 終了日 でなければいけない
-	deadline, _ := time.Parse(time.DateOnly, request.Deadline)
-	startDate, _ := time.Parse(time.DateOnly, request.StartDate)
-	endDate, _ := time.Parse(time.DateOnly, request.EndDate)
-	if !((deadline.Before(startDate) || deadline.Equal(startDate)) && (startDate.Before(endDate) || startDate.Equal(endDate))) {
+	deadline, _ := db.NewDateTime(request.Deadline)
+	startDate, _ := db.NewDateOnly(request.StartDate)
+	endDate, _ := db.NewDateOnly(request.EndDate)
+	if !((isBeforeOrEqual(deadline, startDate)) && (isBeforeOrEqual(startDate, endDate))) {
 		return PostRequestsResponse{}, errors.New("input date must be deadline <= start_date <= end_date")
 	}
 
@@ -213,8 +213,8 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	// 全てのエントリーについて、バリデーションを行う
 	for _, entry := range entries.Entries {
 		// start_date <= date <= end_date のバリデーション
-		date, _ := time.Parse(time.DateOnly, entry.Date)
-		if !((startDate.Before(date) || startDate.Equal(date)) && (date.Before(endDate) || date.Equal(endDate))) {
+		date, _ := db.NewDateOnly(entry.Date)
+		if !((isBeforeOrEqual(startDate, date)) && (isBeforeOrEqual(date, endDate))) {
 			return PostEntriesResponse{}, errors.New("must be start_date <= date <= end_date")
 		}
 
@@ -225,7 +225,7 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	// db.Entry型に変換
 	dbEntries := []db.Entry{}
 	for _, entry := range entries.Entries {
-		date, _ := time.Parse(time.DateOnly, entry.Date)
+		date, _ := db.NewDateOnly(entry.Date)
 		dbEntries = append(dbEntries, db.Entry{
 			RequestID: entries.ID,
 			UserID:    entry.UserID,
@@ -246,4 +246,10 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 	}
 
 	return response, nil
+}
+
+// utility
+
+func isBeforeOrEqual[T1 db.DateOnly | db.DateTime, T2 db.DateOnly | db.DateTime](a T1, b T2) bool {
+	return time.Time(a).Before(time.Time(b)) || time.Time(a).Equal(time.Time(b))
 }

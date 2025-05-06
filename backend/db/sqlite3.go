@@ -27,6 +27,18 @@ func (db *Sqlite3DB) Close() error {
 	return db.Conn.Close()
 }
 
+// sqlite3では時間は文字列型で保存されるため、
+// 共通フォーマットを用いてtime.Time型に変換する
+func parseTime(t string) time.Time {
+	parsed, _ := time.Parse(time.DateTime, t)
+	return parsed
+}
+
+// sqlite3の保存する文字列型のtimeデータのフォーマット
+func formatTime[T DateOnly | DateTime](t T) string {
+	return time.Time(t).Format(time.DateTime)
+}
+
 // ユーザーIDでユーザーを取得
 func (db *Sqlite3DB) GetUserByID(id int) (User, error) {
 	var user User
@@ -39,7 +51,7 @@ func (db *Sqlite3DB) GetUserByID(id int) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	user.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
+	user.CreatedAt = DateTime(parseTime(createdAt))
 	return user, nil
 }
 
@@ -55,7 +67,7 @@ func (db *Sqlite3DB) GetUserByLoginID(loginID string) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	user.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
+	user.CreatedAt = DateTime(parseTime(createdAt))
 	return user, nil
 }
 
@@ -75,10 +87,10 @@ func (db *Sqlite3DB) GetRequests() ([]Request, error) {
 		if err != nil {
 			return nil, err
 		}
-		req.StartDate, _ = time.Parse(time.DateTime, startDate)
-		req.EndDate, _ = time.Parse(time.DateTime, endDate)
-		req.Deadline, _ = time.Parse(time.DateTime, deadline)
-		req.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
+		req.StartDate = DateOnly(parseTime(startDate))
+		req.EndDate = DateOnly(parseTime(endDate))
+		req.Deadline = DateTime(parseTime(deadline))
+		req.CreatedAt = DateTime(parseTime(createdAt))
 		requests = append(requests, req)
 	}
 	return requests, nil
@@ -93,10 +105,10 @@ func (db *Sqlite3DB) GetRequestByID(id int) (Request, error) {
 	if err != nil {
 		return Request{}, err
 	}
-	req.StartDate, _ = time.Parse(time.DateOnly, startDate)
-	req.EndDate, _ = time.Parse(time.DateOnly, endDate)
-	req.Deadline, _ = time.Parse(time.DateOnly, deadline)
-	req.CreatedAt, _ = time.Parse(time.DateTime, createdAt)
+	req.StartDate = DateOnly(parseTime(startDate))
+	req.EndDate = DateOnly(parseTime(endDate))
+	req.Deadline = DateTime(parseTime(deadline))
+	req.CreatedAt = DateTime(parseTime(createdAt))
 	return req, nil
 }
 
@@ -116,17 +128,17 @@ func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 		if err != nil {
 			return nil, err
 		}
-		entry.Date, _ = time.Parse(time.DateTime, date)
+		entry.Date = DateOnly(parseTime(date))
 		entries = append(entries, entry)
 	}
 	return entries, nil
 }
 
 // 新しいシフトリクエストを作成
-func (db *Sqlite3DB) CreateRequest(creatorID int, startDate time.Time, endDate time.Time, deadline time.Time) (int, error) {
+func (db *Sqlite3DB) CreateRequest(creatorID int, startDate DateOnly, endDate DateOnly, deadline DateTime) (int, error) {
 	res, err := db.Conn.Exec(
 		"INSERT INTO requests (creator_id, start_date, end_date, deadline) VALUES (?, ?, ?, ?)",
-		creatorID, startDate.Format(time.DateOnly), endDate.Format(time.DateOnly), deadline.Format(time.DateOnly),
+		creatorID, formatTime(startDate), formatTime(endDate), formatTime(deadline),
 	)
 	if err != nil {
 		return -1, err
@@ -140,10 +152,10 @@ func (db *Sqlite3DB) CreateRequest(creatorID int, startDate time.Time, endDate t
 }
 
 // 新しい1つのエントリーを作成
-func (db *Sqlite3DB) createEntry(requestID int, userID int, date time.Time, hour int) (int, error) {
+func (db *Sqlite3DB) createEntry(requestID int, userID int, date DateOnly, hour int) (int, error) {
 	res, err := db.Conn.Exec(
 		"INSERT INTO entries (request_id, user_id, date, hour) VALUES (?, ?, ?, ?)",
-		requestID, userID, date.Format(time.DateOnly), hour,
+		requestID, userID, formatTime(date), hour,
 	)
 	if err != nil {
 		return -1, err
