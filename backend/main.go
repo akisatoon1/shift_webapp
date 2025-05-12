@@ -34,6 +34,10 @@ func main() {
 	if frontEndURL == "" {
 		log.Fatal("FRONTEND_URLが設定されていません")
 	}
+	sessionKey := os.Getenv("SESSION_KEY")
+	if sessionKey == "" {
+		log.Fatal("SESSION_KEYが設定されていません")
+	}
 
 	mode := os.Getenv("MODE")
 	var database db.DB
@@ -54,7 +58,7 @@ func main() {
 	}
 
 	// セッションの初期化
-	cookie := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+	cookie := sessions.NewCookieStore([]byte(sessionKey))
 
 	// アプリケーション全体で使うデータを管理するコンテキストを作成
 	appCtx := context.NewAppContext(database, cookie)
