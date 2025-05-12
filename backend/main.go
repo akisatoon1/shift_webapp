@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -28,6 +29,14 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("PORTが設定されていません")
+	}
+	frontEndURL := os.Getenv("FRONTEND_URL")
+	if frontEndURL == "" {
+		log.Fatal("FRONTEND_URLが設定されていません")
+	}
+	sessionKey := os.Getenv("SESSION_KEY")
+	if sessionKey == "" {
+		log.Fatal("SESSION_KEYが設定されていません")
 	}
 
 	mode := os.Getenv("MODE")
@@ -49,7 +58,7 @@ func main() {
 	}
 
 	// セッションの初期化
-	cookie := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+	cookie := sessions.NewCookieStore([]byte(sessionKey))
 
 	// アプリケーション全体で使うデータを管理するコンテキストを作成
 	appCtx := context.NewAppContext(database, cookie)
@@ -58,7 +67,14 @@ func main() {
 	mux := http.NewServeMux()
 	router.Routes(mux, appCtx)
 
+	// CORSの設定
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{frontEndURL},
+		AllowCredentials: true,
+	}).Handler(mux)
+	log.Println("CORSを設定します: Allow Origin " + frontEndURL)
+
 	// サーバーの起動
 	log.Println("サーバーを起動します: http://localhost:" + port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	log.Fatal(http.ListenAndServe(":"+port, corsHandler))
 }

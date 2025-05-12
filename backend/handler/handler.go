@@ -2,6 +2,7 @@ package handler
 
 import (
 	"backend/context"
+	"log"
 	"net/http"
 )
 
@@ -17,6 +18,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(err.code)
 		w.Write([]byte(`{"error": "` + err.message + `"}`))
+		log.Printf("Error: %s\n", err.err.Error())
 	}
 }
 
