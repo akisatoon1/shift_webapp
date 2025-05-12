@@ -74,7 +74,7 @@ export default function RequestDetailPage() {
                 setError(data.error || "取得に失敗しました");
             } else {
                 const data = await res.json();
-                setEntries(data);
+                setEntries(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             setError("通信エラーが発生しました");
