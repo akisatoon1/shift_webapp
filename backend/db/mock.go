@@ -62,8 +62,10 @@ func (m *mockDB) CreateEntries(entries []Entry) ([]int, error) {
 	lastID := len(m.Entries)
 	ids := []int{}
 	for i := range entries {
+		id := lastID + i + 1
+		entries[i].ID = id
 		m.Entries = append(m.Entries, entries[i])
-		ids = append(ids, lastID+1+i)
+		ids = append(ids, id)
 	}
 	return ids, nil
 }

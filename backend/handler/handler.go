@@ -18,7 +18,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(err.code)
 		w.Write([]byte(`{"error": "` + err.message + `"}`))
-		log.Printf("Error: %s\n", err.err.Error())
+		// TODO: エラーメッセージが不適切
+		// TODO: エラーハンドリングでのログ出力
+		if err.err != nil {
+			log.Printf("Error: %s\n", err.err.Error())
+		}
 	}
 }
 
