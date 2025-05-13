@@ -91,7 +91,7 @@
         "date": string,
         "hour": number
     }[]
-}[]
+}
 ```
 
 ### POST /requests/{request_id}/entries

@@ -22,7 +22,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function RequestDetailPage() {
     const params = useParams();
     const requestId = params?.request_id;
-    const [entries, setEntries] = useState<RequestEntries[]>([]);
+    const [entries, setEntries] = useState<RequestEntries | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [entryDate, setEntryDate] = useState("");
@@ -74,7 +74,7 @@ export default function RequestDetailPage() {
                 setError(data.error || "取得に失敗しました");
             } else {
                 const data = await res.json();
-                setEntries(Array.isArray(data) ? data : []);
+                setEntries(data);
             }
         } catch (e) {
             setError("通信エラーが発生しました");
@@ -118,8 +118,8 @@ export default function RequestDetailPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {entries.map((entryGroup) =>
-                                entryGroup.entries.map((entry) => (
+                            {entries && Array.isArray(entries.entries) && entries.entries.length > 0 ? (
+                                entries.entries.map((entry: Entry) => (
                                     <tr key={entry.id} className="hover:bg-gray-50">
                                         <td className="border px-2 py-1 text-center">{entry.id}</td>
                                         <td className="border px-2 py-1">{entry.user.name}</td>
@@ -127,6 +127,10 @@ export default function RequestDetailPage() {
                                         <td className="border px-2 py-1">{entry.hour}</td>
                                     </tr>
                                 ))
+                            ) : (
+                                <tr>
+                                    <td className="border px-2 py-1 text-center" colSpan={4}>エントリーがありません</td>
+                                </tr>
                             )}
                         </tbody>
                     </table>
