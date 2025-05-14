@@ -8,7 +8,6 @@ import (
 	"backend/auth"
 	"backend/context"
 	"backend/db"
-	"errors"
 	"time"
 )
 
@@ -139,7 +138,7 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 		return PostRequestsResponse{}, err
 	}
 	if !isUserManager {
-		return PostRequestsResponse{}, errors.New("マネージャーではないユーザーがシフトリクエストを作成しようとしています")
+		return PostRequestsResponse{}, ErrForbidden
 	}
 
 	// 日付の整合性チェック
@@ -152,7 +151,7 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 		return PostRequestsResponse{}, err
 	}
 	if !((isBeforeOrEqual(deadline, startDate)) && (isBeforeOrEqual(startDate, endDate))) {
-		return PostRequestsResponse{}, errors.New("input date must be deadline <= start_date <= end_date")
+		return PostRequestsResponse{}, ErrInvalidInput
 	}
 
 	// DBに保存
@@ -199,7 +198,7 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 		return PostEntriesResponse{}, err
 	}
 	if !isUserEmployee {
-		return PostEntriesResponse{}, errors.New("従業員ではないユーザーがエントリーを作成しようとしています")
+		return PostEntriesResponse{}, ErrForbidden
 	}
 
 	// シフトリクエストIDが存在するかチェック
@@ -232,13 +231,13 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 			return PostEntriesResponse{}, err
 		}
 		if !((isBeforeOrEqual(startDate, date)) && (isBeforeOrEqual(date, endDate))) {
-			return PostEntriesResponse{}, errors.New("must be start_date <= date <= end_date")
+			return PostEntriesResponse{}, ErrInvalidInput
 		}
 
 		// hourのvalidation
 		// 0 <= hour <= 23 でなければいけない
 		if !(0 <= entry.Hour && entry.Hour <= 23) {
-			return PostEntriesResponse{}, errors.New("hour must be 0 <= hour <= 23")
+			return PostEntriesResponse{}, ErrInvalidInput
 		}
 	}
 
