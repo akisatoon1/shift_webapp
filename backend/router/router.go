@@ -19,7 +19,9 @@ type route struct {
 func applyRoutes(ctx *context.AppContext, mux *http.ServeMux, routes []route) {
 	basePath := "/api"
 	for _, r := range routes {
-		r.handlerFn = middleware.ValidateContentType(r.handlerFn)
+		if r.method == "POST" {
+			r.handlerFn = middleware.ValidateContentType(r.handlerFn)
+		}
 		handler := handler.NewHandler(ctx, r.handlerFn)
 		path := filepath.Join(basePath, r.pattern)
 		mux.Handle(r.method+" "+path, handler)
