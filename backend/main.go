@@ -70,6 +70,7 @@ func main() {
 	// CORSの設定
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{frontEndURL},
+		AllowedMethods:   []string{"GET", "POST", "DELETE"},
 		AllowCredentials: true,
 	}).Handler(mux)
 	log.Println("CORSを設定します: Allow Origin " + frontEndURL)
