@@ -6,8 +6,9 @@ export default function Header() {
     const router = useRouter();
     const pathname = usePathname();
     const handleLogout = async () => {
-        await fetch("/api/logout", {
-            method: "POST",
+        const api_base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
+        await fetch(`${api_base_url}/session`, {
+            method: "DELETE",
             credentials: "include",
         });
         router.push("/login");
