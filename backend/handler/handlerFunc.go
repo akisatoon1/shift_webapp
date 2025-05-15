@@ -5,6 +5,7 @@ import (
 	"backend/context"
 	"backend/model"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 )
@@ -101,12 +102,13 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 		Deadline:  body.Deadline,
 	})
 	if err != nil {
-		if err == model.ErrForbidden {
+		if errors.Is(err, model.ErrForbidden) {
 			return NewAppError(err, "PostRequestsRequest: 権限がありません", http.StatusForbidden)
 		}
 
-		if err == model.ErrInvalidInput {
-			return NewAppError(err, "PostRequestsRequest: 入力値が間違っています", http.StatusBadRequest)
+		var inputErr model.InputError
+		if errors.As(err, &inputErr) {
+			return NewAppError(inputErr, inputErr.Message(), http.StatusBadRequest)
 		}
 
 		return NewAppError(err, "PostRequestsRequest: シフトリクエストの作成に失敗しました", http.StatusInternalServerError)
@@ -160,12 +162,13 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	// エントリーを作成する
 	response, err := model.CreateEntries(ctx, entries)
 	if err != nil {
-		if err == model.ErrForbidden {
+		if errors.Is(err, model.ErrForbidden) {
 			return NewAppError(err, "PostEntriesRequest: 権限がありません", http.StatusForbidden)
 		}
 
-		if err == model.ErrInvalidInput {
-			return NewAppError(err, "PostEntriesRequest: 入力値が間違っています", http.StatusBadRequest)
+		var inputErr model.InputError
+		if errors.As(err, &inputErr) {
+			return NewAppError(inputErr, inputErr.Message(), http.StatusBadRequest)
 		}
 
 		return NewAppError(err, "PostEntriesRequest: エントリーの作成に失敗しました", http.StatusInternalServerError)

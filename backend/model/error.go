@@ -3,6 +3,25 @@ package model
 import "errors"
 
 var (
-	ErrForbidden    = errors.New("権限がありません")
-	ErrInvalidInput = errors.New("入力値が間違っています")
+	ErrForbidden = errors.New("forbidden access")
 )
+
+type InputError struct {
+	err     error
+	message string
+}
+
+func NewInputError(err error, message string) InputError {
+	return InputError{
+		err:     err,
+		message: message,
+	}
+}
+
+func (e InputError) Error() string {
+	return e.err.Error()
+}
+
+func (e InputError) Message() string {
+	return e.message
+}

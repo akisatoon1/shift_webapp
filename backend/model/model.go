@@ -8,6 +8,7 @@ import (
 	"backend/auth"
 	"backend/context"
 	"backend/db"
+	"errors"
 	"time"
 )
 
@@ -151,7 +152,10 @@ func CreateRequest(ctx *context.AppContext, request NewRequest) (PostRequestsRes
 		return PostRequestsResponse{}, err
 	}
 	if !((isBeforeOrEqual(deadline, startDate)) && (isBeforeOrEqual(startDate, endDate))) {
-		return PostRequestsResponse{}, ErrInvalidInput
+		return PostRequestsResponse{}, NewInputError(
+			errors.New("must be deadline <= start_date <= end_date"),
+			"期限 <= 開始日 <= 終了日 でなければいけない",
+		)
 	}
 
 	// DBに保存
@@ -231,13 +235,19 @@ func CreateEntries(ctx *context.AppContext, entries NewEntries) (PostEntriesResp
 			return PostEntriesResponse{}, err
 		}
 		if !((isBeforeOrEqual(startDate, date)) && (isBeforeOrEqual(date, endDate))) {
-			return PostEntriesResponse{}, ErrInvalidInput
+			return PostEntriesResponse{}, NewInputError(
+				errors.New("must be start_date <= date <= end_date"),
+				"開始日 <= 日付 <= 終了日 でなければいけない",
+			)
 		}
 
 		// hourのvalidation
 		// 0 <= hour <= 23 でなければいけない
 		if !(0 <= entry.Hour && entry.Hour <= 23) {
-			return PostEntriesResponse{}, ErrInvalidInput
+			return PostEntriesResponse{}, NewInputError(
+				errors.New("must be 0 <= hour <= 23"),
+				"0 <= 時間 <= 23 でなければいけない",
+			)
 		}
 	}
 
