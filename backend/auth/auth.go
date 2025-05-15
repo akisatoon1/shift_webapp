@@ -14,14 +14,14 @@ func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, logi
 	// login_idとpasswordを比較
 	user, err := ctx.GetDB().GetUserByLoginID(loginID)
 	if err != nil {
-		if err == db.ErrUserNotFound {
-			return errors.New("invalid login_id or password")
+		if errors.Is(err, db.ErrUserNotFound) {
+			return ErrIncorrectAuth
 		}
 		return err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return errors.New("invalid login_id or password")
+		return ErrIncorrectAuth
 	}
 
 	// 成功時はセッションを作成し、Cookieに保存

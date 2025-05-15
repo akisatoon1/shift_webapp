@@ -31,7 +31,7 @@ func (m *mockDB) GetUserByID(id int) (User, error) {
 			return user, nil
 		}
 	}
-	return User{}, errors.New("user not found")
+	return User{}, ErrUserNotFound
 }
 
 func (m *mockDB) GetUserByLoginID(loginID string) (User, error) {
@@ -40,7 +40,7 @@ func (m *mockDB) GetUserByLoginID(loginID string) (User, error) {
 			return user, nil
 		}
 	}
-	return User{}, errors.New("user not found")
+	return User{}, ErrUserNotFound
 }
 
 func (m *mockDB) GetEntriesByRequestID(requestID int) ([]Entry, error) {

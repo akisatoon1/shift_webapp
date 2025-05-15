@@ -14,6 +14,8 @@ import (
 	APIエンドポイントに対応するハンドラー関数
 */
 
+var ErrNotLoggedIn = errors.New("user not logged in")
+
 func LoginRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	type Body struct {
 		LoginID  string `json:"login_id"`
@@ -22,12 +24,15 @@ func LoginRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Reques
 
 	var body Body
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return NewAppError(err, "LoginRequest: リクエストボディのデコードに失敗しました", http.StatusBadRequest)
+		return NewAppError(err, "リクエストボディのデコードに失敗しました", http.StatusBadRequest)
 	}
 
 	err := auth.Login(ctx, w, r, body.LoginID, body.Password)
 	if err != nil {
-		return NewAppError(err, "LoginRequest: ログインに失敗しました", http.StatusUnauthorized)
+		if errors.Is(err, auth.ErrIncorrectAuth) {
+			return NewAppError(err, "ログインIDまたはパスワードが間違っています", http.StatusUnauthorized)
+		}
+		return NewAppError(err, "ログインに失敗しました", http.StatusInternalServerError)
 	}
 	return nil
 }
@@ -35,7 +40,7 @@ func LoginRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Reques
 func LogoutRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	err := auth.Logout(ctx, w, r)
 	if err != nil {
-		return NewAppError(err, "LogoutRequest: ログアウトに失敗しました", http.StatusInternalServerError)
+		return NewAppError(err, "ログアウトに失敗しました", http.StatusInternalServerError)
 	}
 	return nil
 }
@@ -43,12 +48,12 @@ func LogoutRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Reque
 func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	// ログインユーザのみ認可
 	if _, isLoggedIn := auth.GetUserID(ctx, r); !isLoggedIn {
-		return NewAppError(nil, "GetRequestsRequest: ログインしていません", http.StatusUnauthorized)
+		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
 	requests, err := model.GetRequests(ctx)
 	if err != nil {
-		return NewAppError(err, "GetRequestsRequest: シフトリクエストの取得に失敗しました", http.StatusInternalServerError)
+		return NewAppError(err, "シフトリクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
 	json.NewEncoder(w).Encode(requests)
 	return nil
@@ -57,18 +62,18 @@ func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 func GetEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	// ログインユーザのみ認可
 	if _, isLoggedIn := auth.GetUserID(ctx, r); !isLoggedIn {
-		return NewAppError(nil, "GetEntriesRequest: ログインしていません", http.StatusUnauthorized)
+		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
 	requestId := r.PathValue("id")
 	requestIdInt, err := strconv.Atoi(requestId)
 	if err != nil {
-		return NewAppError(err, "GetEntriesRequest: requestidが整数ではありません", http.StatusBadRequest)
+		return NewAppError(err, "requestIdが整数ではありません", http.StatusBadRequest)
 	}
 
 	entries, err := model.GetEntries(ctx, requestIdInt)
 	if err != nil {
-		return NewAppError(err, "GetEntriesRequest: エントリーの取得に失敗しました", http.StatusInternalServerError)
+		return NewAppError(err, "エントリーの取得に失敗しました", http.StatusInternalServerError)
 	}
 	json.NewEncoder(w).Encode(entries)
 	return nil
@@ -78,7 +83,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 	// ログインしているユーザーのIDを取得する
 	userID, isLoggedIn := auth.GetUserID(ctx, r)
 	if !isLoggedIn {
-		return NewAppError(nil, "PostRequestsRequest: ログインしていません", http.StatusUnauthorized)
+		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
 	// リクエストボディの形式を定義する
@@ -91,7 +96,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 	// リクエストボディのバリデーション
 	var body Body
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return NewAppError(err, "PostRequestsRequest: リクエストボディのデコードに失敗しました", http.StatusBadRequest)
+		return NewAppError(err, "リクエストボディのデコードに失敗しました", http.StatusBadRequest)
 	}
 
 	// 新しいシフトリクエストを作成する
@@ -103,7 +108,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 	})
 	if err != nil {
 		if errors.Is(err, model.ErrForbidden) {
-			return NewAppError(err, "PostRequestsRequest: 権限がありません", http.StatusForbidden)
+			return NewAppError(err, "権限がありません", http.StatusForbidden)
 		}
 
 		var inputErr model.InputError
@@ -111,7 +116,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 			return NewAppError(inputErr, inputErr.Message(), http.StatusBadRequest)
 		}
 
-		return NewAppError(err, "PostRequestsRequest: シフトリクエストの作成に失敗しました", http.StatusInternalServerError)
+		return NewAppError(err, "シフトリクエストの作成に失敗しました", http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -123,7 +128,7 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	// ログインしているユーザーのIDを取得する
 	userID, isLoggedIn := auth.GetUserID(ctx, r)
 	if !isLoggedIn {
-		return NewAppError(nil, "PostEntriesRequest: ログインしていません", http.StatusUnauthorized)
+		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
 	// シフトリクエストのIDを取得する
@@ -131,7 +136,7 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	requestId := r.PathValue("id")
 	requestIdInt, err := strconv.Atoi(requestId)
 	if err != nil {
-		return NewAppError(err, "PostEntriesRequest: requestidが整数ではありません", http.StatusBadRequest)
+		return NewAppError(err, "requestidが整数ではありません", http.StatusBadRequest)
 	}
 
 	// リクエストボディの形式を定義する
@@ -143,7 +148,7 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	// リクエストボディのバリデーション
 	var body Body
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return NewAppError(err, "PostEntriesRequest: リクエストボディのデコードに失敗しました", http.StatusBadRequest)
+		return NewAppError(err, "リクエストボディのデコードに失敗しました", http.StatusBadRequest)
 	}
 
 	// モデルに渡す形に変換する
@@ -163,7 +168,7 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	response, err := model.CreateEntries(ctx, entries)
 	if err != nil {
 		if errors.Is(err, model.ErrForbidden) {
-			return NewAppError(err, "PostEntriesRequest: 権限がありません", http.StatusForbidden)
+			return NewAppError(err, "権限がありません", http.StatusForbidden)
 		}
 
 		var inputErr model.InputError
@@ -171,7 +176,7 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 			return NewAppError(inputErr, inputErr.Message(), http.StatusBadRequest)
 		}
 
-		return NewAppError(err, "PostEntriesRequest: エントリーの作成に失敗しました", http.StatusInternalServerError)
+		return NewAppError(err, "エントリーの作成に失敗しました", http.StatusInternalServerError)
 	}
 
 	// レスポンスを返す
