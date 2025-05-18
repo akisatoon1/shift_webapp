@@ -33,7 +33,7 @@ func Routes(mux *http.ServeMux, ctx *context.AppContext) {
 		{"POST", "/login", handler.LoginRequest},
 		{"DELETE", "/session", handler.LogoutRequest},
 		{"GET", "/requests", handler.GetRequestsRequest},
-		{"GET", "/requests/{id}/entries", handler.GetEntriesRequest},
+		{"GET", "/requests/{id}", handler.GetRequestRequest},
 		{"POST", "/requests", handler.PostRequestsRequest},
 		{"POST", "/requests/{id}/entries", handler.PostEntriesRequest},
 	}
