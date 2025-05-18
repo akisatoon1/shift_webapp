@@ -44,8 +44,9 @@ func TestGetRequests(t *testing.T) {
 func TestGetEntries(t *testing.T) {
 	ctx := newTestContext(
 		[]db.User{
-			{ID: 1, Name: "テストユーザー1"},
-			{ID: 2, Name: "テストユーザー2"},
+			{ID: 1, Name: "テストユーザー1", Role: auth.RoleEmployee},
+			{ID: 2, Name: "テストユーザー2", Role: auth.RoleEmployee},
+			{ID: 3, Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Request{
 			{ID: 1, CreatorID: 3, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
@@ -55,13 +56,18 @@ func TestGetEntries(t *testing.T) {
 			{ID: 2, UserID: 2, RequestID: 1, Date: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Hour: 8},
 		},
 	)
-	got, err := GetEntries(ctx, 1)
+	got, err := GetRequest(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	want := GetEntriesResponse{
-		ID: 1,
+		ID:        1,
+		Creator:   User{ID: 3, Name: "テストマネージャー"},
+		StartDate: "2024-06-01",
+		EndDate:   "2024-06-01",
+		Deadline:  "2024-06-01 00:00:00",
+		CreatedAt: "2024-06-01 00:00:00",
 		Entries: []Entry{
 			{ID: 1, User: User{ID: 1, Name: "テストユーザー1"}, Date: "2024-06-01", Hour: 8},
 			{ID: 2, User: User{ID: 2, Name: "テストユーザー2"}, Date: "2024-06-01", Hour: 8},

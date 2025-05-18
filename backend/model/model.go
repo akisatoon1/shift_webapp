@@ -78,20 +78,38 @@ type Entry struct {
 // エントリー一覧APIのレスポンス型
 // 1つのシフトリクエストIDに紐づくエントリーのリスト
 type GetEntriesResponse struct {
-	ID      int     `json:"id"`
-	Entries []Entry `json:"entries"`
+	ID        int     `json:"id"`
+	Creator   User    `json:"creator"`
+	StartDate string  `json:"start_date"`
+	EndDate   string  `json:"end_date"`
+	Deadline  string  `json:"deadline"`
+	CreatedAt string  `json:"created_at"`
+	Entries   []Entry `json:"entries"`
 }
 
-// 指定したシフトリクエストIDに紐づくエントリー一覧を取得し、APIレスポンス用の構造体に変換して返す
-func GetEntries(ctx *context.AppContext, requestID int) (GetEntriesResponse, error) {
+// 指定したシフトリクエストIDに紐づくエントリー一覧と、シフトリクエスト詳細データを取得し、
+// APIレスポンス用の構造体に変換して返す
+func GetRequest(ctx *context.AppContext, requestID int) (GetEntriesResponse, error) {
 	// シフトリクエストIDが存在するかチェック
-	if _, err := ctx.GetDB().GetRequestByID(requestID); err != nil {
+	request, err := ctx.GetDB().GetRequestByID(requestID)
+	if err != nil {
+		return GetEntriesResponse{}, err
+	}
+
+	// 作成者の名前を取得
+	user, err := ctx.GetDB().GetUserByID(request.CreatorID)
+	if err != nil {
 		return GetEntriesResponse{}, err
 	}
 
 	// APIレスポンスのための、エントリーに紐づいたシフトリクエストID
 	response := GetEntriesResponse{
-		ID: requestID,
+		ID:        requestID,
+		Creator:   User{ID: request.CreatorID, Name: user.Name},
+		StartDate: request.StartDate.Format(),
+		EndDate:   request.EndDate.Format(),
+		Deadline:  request.Deadline.Format(),
+		CreatedAt: request.CreatedAt.Format(),
 	}
 
 	// DBからエントリー一覧を取得
