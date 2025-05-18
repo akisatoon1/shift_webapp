@@ -59,7 +59,7 @@ func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	return nil
 }
 
-func GetEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	// ログインユーザのみ認可
 	if _, isLoggedIn := auth.GetUserID(ctx, r); !isLoggedIn {
 		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
@@ -71,11 +71,11 @@ func GetEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 		return NewAppError(err, "requestIdが整数ではありません", http.StatusBadRequest)
 	}
 
-	entries, err := model.GetEntries(ctx, requestIdInt)
+	response, err := model.GetRequest(ctx, requestIdInt)
 	if err != nil {
-		return NewAppError(err, "エントリーの取得に失敗しました", http.StatusInternalServerError)
+		return NewAppError(err, "リクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
-	json.NewEncoder(w).Encode(entries)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }
 

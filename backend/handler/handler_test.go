@@ -123,27 +123,28 @@ func TestGetRequestsHandler(t *testing.T) {
 	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
-func TestGetEntriesHandler(t *testing.T) {
+func TestGetRequestHandler(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
-			{ID: 1, CreatorID: 2, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+			{ID: 1, CreatorID: 3, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
 		},
 		[]db.User{
 			{ID: 1, LoginID: "test_user1", Password: string(hashedPassword), Name: "テストユーザー1", Role: auth.RoleEmployee},
 			{ID: 2, LoginID: "test_user2", Password: string(hashedPassword), Name: "テストユーザー2", Role: auth.RoleEmployee},
+			{ID: 3, LoginID: "test_user3", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Entry{
 			{ID: 1, RequestID: 1, UserID: 1, Date: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Hour: 8},
 			{ID: 2, RequestID: 1, UserID: 2, Date: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Hour: 8},
 		},
 	)
-	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}/entries", GetEntriesRequest)
+	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}", GetRequestRequest)
 
 	// ログイン用のCookieを取得
 	cookies := getLoginCookies(appCtx, "test_user1", "password")
 
-	req := httptest.NewRequest("GET", "/requests/1/entries", nil)
+	req := httptest.NewRequest("GET", "/requests/1", nil)
 	addCookiesToRequest(req, cookies)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
@@ -153,6 +154,11 @@ func TestGetEntriesHandler(t *testing.T) {
 	wantJSON := `
 	{
 		"id": 1,
+		"creator": {"id": 3, "name": "テストマネージャー"},
+		"start_date": "2024-06-01",
+		"end_date": "2024-06-01",
+		"deadline": "2024-06-01 00:00:00",
+		"created_at": "2024-06-01 00:00:00",
 		"entries": [
 			{
 				"id": 1,
