@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
-// TODO: api設計を変える(entries周り)
 // TODO: 日付を正しく列挙(提出ページのパラメータで渡す)
 // TODO: 更新や削除はどうする？
 
