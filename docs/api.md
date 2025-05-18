@@ -76,12 +76,21 @@
 }
 ```
 
-### GET /requests/{request_id}/entries
-**提出されたシフトエントリーの一覧を返す**
+### GET /requests/{request_id}
+**提出されたシフトエントリーの一覧をを含む、シフトリクエスト詳細データを返す**
 #### Response body
 ```
 {
     "id": number,
+    "creator": {
+        "id": number,
+        "name": string
+    },
+    "start_date": string,
+    "end_date": string,
+    "deadline": string,
+    "created_at": string,
+
     "entries": {
         "id": number,
         "user": {
