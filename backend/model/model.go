@@ -4,6 +4,9 @@ package model
 	apiの仕様に沿ったレスポンスを適切な型(構造体やスライス)で返す
 */
 
+// TODO: modelという命名は間違い。リファクタリングする
+// TODO: sessionインターフェイス
+
 import (
 	"backend/auth"
 	"backend/context"
@@ -17,6 +20,46 @@ import (
 	structのtagはhttp responseのjsonのkeyに利用される
 	(modelがhandlerに依存している、悪い設計です)
 */
+
+type SessionUser struct {
+	ID        int      `json:"id"`
+	Name      string   `json:"name"`
+	Roles     []string `json:"roles"`
+	CreatedAt string   `json:"created_at"`
+}
+
+type Session struct {
+	User SessionUser `json:"user"`
+}
+
+// ユーザのセッション情報を返す
+func GetSession(ctx *context.AppContext, userID int) (Session, error) {
+	user, err := ctx.GetDB().GetUserByID(userID)
+	if err != nil {
+		return Session{}, err
+	}
+
+	// TODO: 抽象化できてない
+	var roles []string
+	if user.Role&auth.RoleEmployee != 0 {
+		roles = append(roles, "employee")
+	}
+	if user.Role&auth.RoleManager != 0 {
+		roles = append(roles, "manager")
+	}
+
+	// APIレスポンス用の構造体に詰める
+	response := Session{
+		User: SessionUser{
+			ID:        user.ID,
+			Name:      user.Name,
+			Roles:     roles,
+			CreatedAt: user.CreatedAt.Format(),
+		},
+	}
+
+	return response, nil
+}
 
 // APIレスポンスのcreatorやuserフィールドで利用される
 type User struct {

@@ -14,6 +14,34 @@ func newTestContext(users []db.User, requests []db.Request, entries []db.Entry) 
 	return context.NewAppContext(db.NewMockDB(requests, users, entries), nil)
 }
 
+func TestGetSession(t *testing.T) {
+	ctx := newTestContext(
+		[]db.User{
+			{ID: 1, Name: "テストユーザー", Role: auth.RoleEmployee, CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+		},
+		[]db.Request{},
+		[]db.Entry{},
+	)
+
+	got, err := GetSession(ctx, 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := Session{
+		User: SessionUser{
+			ID:        1,
+			Name:      "テストユーザー",
+			Roles:     []string{"employee"},
+			CreatedAt: "2024-06-01 00:00:00",
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestGetRequests(t *testing.T) {
 	ctx := newTestContext(
 		[]db.User{
