@@ -37,6 +37,22 @@
 }
 ```
 
+### GET /session
+**セッション情報を返す**
+**ログインしていないときは、`401 Unauthorized`エラーを返す**
+#### Response Body
+```
+{
+    "user": {
+        "id": number,
+        "name": string,
+        "roles": string[],
+        "created_at": string
+    }
+}
+```
+
+
 ### DELETE /session
 **ログアウトする**
 #### Response
