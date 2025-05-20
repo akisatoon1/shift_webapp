@@ -25,7 +25,29 @@ export default function RequestsPage() {
     const [deadline, setDeadline] = useState("");
     const [createError, setCreateError] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
+    const [userRoles, setUserRoles] = useState<string[]>([]);
+    const [userLoaded, setUserLoaded] = useState(false);
     const router = useRouter();
+
+    // ユーザ情報取得
+    useEffect(() => {
+        async function fetchSession() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/session`, { credentials: "include" });
+                if (!res.ok) {
+                    setUserRoles([]);
+                } else {
+                    const data = await res.json();
+                    setUserRoles(data.user?.roles || []);
+                }
+            } catch {
+                setUserRoles([]);
+            } finally {
+                setUserLoaded(true);
+            }
+        }
+        fetchSession();
+    }, []);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -87,22 +109,25 @@ export default function RequestsPage() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
             <div className="w-full max-w-2xl p-8 bg-white rounded shadow-md">
                 <h1 className="text-2xl font-bold mb-6 text-center">リクエスト一覧</h1>
-                <form className="flex flex-col sm:flex-row gap-2 mb-6 items-end" onSubmit={handleCreate}>
-                    <div className="flex flex-col">
-                        <label className="text-sm">開始日</label>
-                        <input type="date" className="border rounded px-2 py-1" value={startDate} onChange={e => setStartDate(e.target.value)} required disabled={createLoading} />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="text-sm">終了日</label>
-                        <input type="date" className="border rounded px-2 py-1" value={endDate} onChange={e => setEndDate(e.target.value)} required disabled={createLoading} />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="text-sm">提出期限</label>
-                        <input type="date" className="border rounded px-2 py-1" value={deadline} onChange={e => setDeadline(e.target.value)} required disabled={createLoading} />
-                    </div>
-                    <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50" disabled={createLoading}>追加</button>
-                </form>
-                {createError && <div className="text-red-600 text-center mb-2">{createError}</div>}
+                {/* manager権限のみ追加フォームを表示 */}
+                {userLoaded && userRoles.includes("manager") && (
+                    <form className="flex flex-col sm:flex-row gap-2 mb-6 items-end" onSubmit={handleCreate}>
+                        <div className="flex flex-col">
+                            <label className="text-sm">開始日</label>
+                            <input type="date" className="border rounded px-2 py-1" value={startDate} onChange={e => setStartDate(e.target.value)} required disabled={createLoading} />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-sm">終了日</label>
+                            <input type="date" className="border rounded px-2 py-1" value={endDate} onChange={e => setEndDate(e.target.value)} required disabled={createLoading} />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-sm">提出期限</label>
+                            <input type="date" className="border rounded px-2 py-1" value={deadline} onChange={e => setDeadline(e.target.value)} required disabled={createLoading} />
+                        </div>
+                        <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50" disabled={createLoading}>追加</button>
+                    </form>
+                )}
+                {createError && userRoles.includes("manager") && <div className="text-red-600 text-center mb-2">{createError}</div>}
                 {loading ? (
                     <div className="text-center">読み込み中...</div>
                 ) : error ? (

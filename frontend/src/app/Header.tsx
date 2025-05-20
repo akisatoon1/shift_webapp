@@ -2,6 +2,8 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 
+// TODO: account情報へのリンク
+
 export default function Header() {
     const router = useRouter();
     const pathname = usePathname();
