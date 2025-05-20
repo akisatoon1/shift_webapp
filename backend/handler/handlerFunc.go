@@ -37,6 +37,21 @@ func LoginRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
+func GetSessionRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// ログインユーザのみ認可
+	userID, isLoggedIn := auth.GetUserID(ctx, r)
+	if !isLoggedIn {
+		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
+	}
+
+	response, err := model.GetSession(ctx, userID)
+	if err != nil {
+		return NewAppError(err, "セッションの取得に失敗しました", http.StatusInternalServerError)
+	}
+	json.NewEncoder(w).Encode(response)
+	return nil
+}
+
 func LogoutRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	err := auth.Logout(ctx, w, r)
 	if err != nil {

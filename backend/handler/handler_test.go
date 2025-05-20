@@ -310,6 +310,40 @@ func TestLoginHandler(t *testing.T) {
 	AssertCode(t, w2.Code, http.StatusUnauthorized, w2.Body.Bytes())
 }
 
+func TestGetSessionHandler(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	appCtx := newTestContext(
+		[]db.Request{},
+		[]db.User{
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Role: auth.RoleEmployee, Name: "テストユーザー", CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+		},
+		[]db.Entry{},
+	)
+	mux := setHandlerToEndpoint(appCtx, "GET /session", GetSessionRequest)
+
+	// ログイン用のCookieを取得
+	cookies := getLoginCookies(appCtx, "test_user", "password")
+
+	req := httptest.NewRequest("GET", "/session", nil)
+	addCookiesToRequest(req, cookies)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	AssertCode(t, w.Code, http.StatusOK, w.Body.Bytes())
+
+	wantJSON := `
+	{
+		"user": {
+			"id": 1,
+			"name": "テストユーザー",
+			"roles": ["employee"],
+			"created_at": "2024-06-01 00:00:00"
+		}
+	}
+	`
+	AssertRes(t, w.Body.Bytes(), wantJSON)
+}
+
 func TestLogoutHandler(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
