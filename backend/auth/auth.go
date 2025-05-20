@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// TODO: sessionをメモリに保存する
+
 func Login(ctx *context.AppContext, w http.ResponseWriter, r *http.Request, loginID string, password string) error {
 	// login_idとpasswordを比較
 	user, err := ctx.GetDB().GetUserByLoginID(loginID)

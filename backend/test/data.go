@@ -39,4 +39,7 @@ var MockEntries = []db.Entry{
 	{ID: 1, RequestID: 1, UserID: 1, Date: mustDateOnly("2024-01-01"), Hour: 8},
 	{ID: 2, RequestID: 1, UserID: 1, Date: mustDateOnly("2024-01-02"), Hour: 6},
 	{ID: 3, RequestID: 2, UserID: 1, Date: mustDateOnly("2024-02-01"), Hour: 7},
+	{ID: 4, RequestID: 2, UserID: 3, Date: mustDateOnly("2024-02-02"), Hour: 8},
+	{ID: 5, RequestID: 2, UserID: 3, Date: mustDateOnly("2024-02-03"), Hour: 10},
+	{ID: 6, RequestID: 2, UserID: 3, Date: mustDateOnly("2024-02-04"), Hour: 12},
 }
