@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
 
-// TODO: ページをリンク
 // TODO: 更新や削除はどうする？
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -103,7 +102,7 @@ export default function EntrySubmitPage() {
                 <div className="mb-4 text-center">
                     <a
                         href={`/requests/${requestId}`}
-                        className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                        className="inline-block bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"
                     >
                         エントリー一覧ページへ戻る
                     </a>

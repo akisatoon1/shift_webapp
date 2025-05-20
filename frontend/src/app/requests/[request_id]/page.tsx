@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+// TODO: エントリー表示のUI
+
 type Entry = {
     id: number;
     user: {
@@ -82,6 +84,12 @@ export default function RequestDetailPage() {
                     </div>
                 )}
                 <div className="mb-4 text-center">
+                    <a
+                        href="/requests"
+                        className="inline-block bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition mr-2"
+                    >
+                        リクエスト一覧へ戻る
+                    </a>
                     <a
                         href={`/requests/${requestId}/submit${startDate && endDate ? `?start_date=${startDate}&end_date=${endDate}` : ''}`}
                         className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
