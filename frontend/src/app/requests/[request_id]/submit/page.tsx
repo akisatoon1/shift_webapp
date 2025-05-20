@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
 
-// TODO: 日付を正しく列挙(提出ページのパラメータで渡す)
+// TODO: ページをリンク
 // TODO: 更新や削除はどうする？
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -11,7 +11,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function EntrySubmitPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const requestId = params?.request_id;
+    const startDate = searchParams.get("start_date");
+    const endDate = searchParams.get("end_date");
     const [submitError, setSubmitError] = useState("");
     const [submitLoading, setSubmitLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -25,9 +28,22 @@ export default function EntrySubmitPage() {
     // 選択状態: { [date: string]: Set<number> }
     const [selected, setSelected] = useState<{ [date: string]: Set<number> }>({});
 
-    const dateList = Array.from({ length: daysInMonth }, (_, i) =>
-        dayjs(new Date(year, month, i + 1)).format("YYYY-MM-DD")
-    );
+    // start_date, end_date から日付リストを生成
+    const dateList = React.useMemo(() => {
+        if (!startDate || !endDate) return [];
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
+        const dates = [];
+        let d = start;
+        while (d.isBefore(end) || d.isSame(end, 'day')) {
+            dates.push(d.format("YYYY-MM-DD"));
+            d = d.add(1, "day");
+        }
+        return dates;
+    }, [startDate, endDate]);
+
+    // start_date, end_dateがない場合のエラー表示
+    const paramError = !startDate || !endDate;
 
     const handleCellClick = (date: string, hour: number) => {
         setSelected(prev => {
@@ -92,61 +108,65 @@ export default function EntrySubmitPage() {
                         エントリー一覧ページへ戻る
                     </a>
                 </div>
-                <form onSubmit={handleSubmit}>
-                    <div className="overflow-x-auto">
-                        <table className="border mb-4 min-w-max">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="border px-2 py-1 w-28">日付</th>
-                                    {hourList.map(hour => (
-                                        <th
-                                            key={hour}
-                                            className="border px-1 py-1 text-xs w-16"
-                                            style={{ minWidth: 48, maxWidth: 64, width: 48 }}
-                                        >
-                                            {hour}~{hour + 1}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {dateList.map(date => (
-                                    <tr key={date}>
-                                        <td className="border px-2 py-1 text-center text-xs">{date}</td>
-                                        {hourList.map(hour => {
-                                            const isSelected = selected[date]?.has(hour);
-                                            return (
-                                                <td
-                                                    key={hour}
-                                                    className={`border px-1 py-1 text-center cursor-pointer select-none transition w-8 h-8 align-middle ${isSelected ? 'bg-blue-400 text-white' : 'bg-white hover:bg-blue-100'}`}
-                                                    style={{ minWidth: 32, maxWidth: 32, width: 32, minHeight: 32, height: 32 }}
-                                                    onClick={() => !submitLoading && handleCellClick(date, hour)}
-                                                >
-                                                    <span style={{ display: 'inline-block', width: '1em', textAlign: 'center' }}>
-                                                        {isSelected ? '●' : '\u00A0'}
-                                                    </span>
-                                                </td>
-                                            );
-                                        })}
+                {paramError ? (
+                    <div className="text-red-600 text-center text-sm mb-2">日付範囲が指定されていません（start_date, end_dateパラメータ必須）</div>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <div className="overflow-x-auto">
+                            <table className="border mb-4 min-w-max">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border px-2 py-1 w-28">日付</th>
+                                        {hourList.map(hour => (
+                                            <th
+                                                key={hour}
+                                                className="border px-1 py-1 text-xs w-16"
+                                                style={{ minWidth: 48, maxWidth: 64, width: 48 }}
+                                            >
+                                                {hour}~{hour + 1}
+                                            </th>
+                                        ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {submitError && (
-                        <div className="text-red-600 text-center text-sm mb-2">{submitError}</div>
-                    )}
-                    {success && (
-                        <div className="text-green-600 text-center text-sm mb-2">提出が完了しました。リダイレクトします...</div>
-                    )}
-                    <button
-                        type="submit"
-                        className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50 w-full"
-                        disabled={submitLoading}
-                    >
-                        {submitLoading ? "提出中..." : "まとめて提出"}
-                    </button>
-                </form>
+                                </thead>
+                                <tbody>
+                                    {dateList.map(date => (
+                                        <tr key={date}>
+                                            <td className="border px-2 py-1 text-center text-xs">{date}</td>
+                                            {hourList.map(hour => {
+                                                const isSelected = selected[date]?.has(hour);
+                                                return (
+                                                    <td
+                                                        key={hour}
+                                                        className={`border px-1 py-1 text-center cursor-pointer select-none transition w-8 h-8 align-middle ${isSelected ? 'bg-blue-400 text-white' : 'bg-white hover:bg-blue-100'}`}
+                                                        style={{ minWidth: 32, maxWidth: 32, width: 32, minHeight: 32, height: 32 }}
+                                                        onClick={() => !submitLoading && handleCellClick(date, hour)}
+                                                    >
+                                                        <span style={{ display: 'inline-block', width: '1em', textAlign: 'center' }}>
+                                                            {isSelected ? '●' : '\u00A0'}
+                                                        </span>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        {submitError && (
+                            <div className="text-red-600 text-center text-sm mb-2">{submitError}</div>
+                        )}
+                        {success && (
+                            <div className="text-green-600 text-center text-sm mb-2">提出が完了しました。リダイレクトします...</div>
+                        )}
+                        <button
+                            type="submit"
+                            className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50 w-full"
+                            disabled={submitLoading}
+                        >
+                            {submitLoading ? "提出中..." : "まとめて提出"}
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
     );
