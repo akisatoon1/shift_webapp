@@ -26,6 +26,7 @@ func mustHashPassword(password string) string {
 
 var MockUsers = []db.User{
 	{ID: 1, LoginID: "employee1", Password: mustHashPassword("pass_employee1"), Name: "テストエンプロイ1", Role: auth.RoleEmployee, CreatedAt: mustDateTime("2023-12-31 12:00:00")},
+	{ID: 3, LoginID: "employee2", Password: mustHashPassword("pass_employee2"), Name: "テストエンプロイ2", Role: auth.RoleEmployee, CreatedAt: mustDateTime("2024-01-31 12:00:00")},
 	{ID: 2, LoginID: "manager1", Password: mustHashPassword("pass_manager1"), Name: "テストマネージャー1", Role: auth.RoleManager, CreatedAt: mustDateTime("2024-01-31 12:00:00")},
 }
 
