@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
@@ -80,11 +79,11 @@ func TestGetRequestsHandler(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
-			{ID: 1, CreatorID: 2, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
-			{ID: 2, CreatorID: 2, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+			{ID: 1, CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
+			{ID: 2, CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.User{
-			{ID: 2, LoginID: "test_user", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager},
+			{ID: 2, LoginID: "test_user", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
 	)
@@ -127,16 +126,16 @@ func TestGetRequestHandler(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
-			{ID: 1, CreatorID: 3, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+			{ID: 1, CreatorID: 3, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.User{
-			{ID: 1, LoginID: "test_user1", Password: string(hashedPassword), Name: "テストユーザー1", Role: auth.RoleEmployee},
-			{ID: 2, LoginID: "test_user2", Password: string(hashedPassword), Name: "テストユーザー2", Role: auth.RoleEmployee},
-			{ID: 3, LoginID: "test_user3", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager},
+			{ID: 1, LoginID: "test_user1", Password: string(hashedPassword), Name: "テストユーザー1", Role: auth.RoleEmployee, CreatedAt: "2024-06-01 00:00:00"},
+			{ID: 2, LoginID: "test_user2", Password: string(hashedPassword), Name: "テストユーザー2", Role: auth.RoleEmployee, CreatedAt: "2024-06-01 00:00:00"},
+			{ID: 3, LoginID: "test_user3", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{
-			{ID: 1, RequestID: 1, UserID: 1, Date: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Hour: 8},
-			{ID: 2, RequestID: 1, UserID: 2, Date: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Hour: 8},
+			{ID: 1, RequestID: 1, UserID: 1, Date: "2024-06-01", Hour: 8},
+			{ID: 2, RequestID: 1, UserID: 2, Date: "2024-06-01", Hour: 8},
 		},
 	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}", GetRequestRequest)
@@ -219,10 +218,11 @@ func TestPostEntriesHandler(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
-			{ID: 1, CreatorID: 2, StartDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), EndDate: db.DateOnly(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), Deadline: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)), CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+			{ID: 1, CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.User{
-			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー", Role: auth.RoleEmployee},
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー", Role: auth.RoleEmployee, CreatedAt: "2024-06-01 00:00:00"},
+			{ID: 2, LoginID: "test_manager", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
 	)
@@ -315,7 +315,7 @@ func TestGetSessionHandler(t *testing.T) {
 	appCtx := newTestContext(
 		[]db.Request{},
 		[]db.User{
-			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Role: auth.RoleEmployee, Name: "テストユーザー", CreatedAt: db.DateTime(time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC))},
+			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Role: auth.RoleEmployee, Name: "テストユーザー", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
 	)

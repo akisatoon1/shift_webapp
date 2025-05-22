@@ -3,6 +3,7 @@ package handler
 import (
 	"backend/auth"
 	"backend/context"
+	"backend/handler/dto"
 	"backend/model"
 	"encoding/json"
 	"errors"
@@ -17,17 +18,12 @@ import (
 var ErrNotLoggedIn = errors.New("user not logged in")
 
 func LoginRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
-	type Body struct {
-		LoginID  string `json:"login_id"`
-		Password string `json:"password"`
-	}
-
-	var body Body
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	var loginReq dto.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
 		return NewAppError(err, "リクエストボディのデコードに失敗しました", http.StatusBadRequest)
 	}
 
-	err := auth.Login(ctx, w, r, body.LoginID, body.Password)
+	err := auth.Login(ctx, w, r, loginReq.LoginID, loginReq.Password)
 	if err != nil {
 		if errors.Is(err, auth.ErrIncorrectAuth) {
 			return NewAppError(err, "ログインIDまたはパスワードが間違っています", http.StatusUnauthorized)
@@ -44,11 +40,30 @@ func GetSessionRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
-	response, err := model.GetSession(ctx, userID)
+	// ユーザー情報を取得
+	user, err := model.GetUserByID(ctx, userID)
 	if err != nil {
 		return NewAppError(err, "セッションの取得に失敗しました", http.StatusInternalServerError)
 	}
-	json.NewEncoder(w).Encode(response)
+
+	// レスポンスDTOを作成
+	roles := []string{}
+	if user.Role == 1 {
+		roles = append(roles, "employee")
+	} else {
+		roles = append(roles, "user")
+	}
+
+	sessionResponse := dto.SessionResponse{
+		User: dto.UserSessionInfo{
+			ID:        user.ID,
+			Name:      user.Name,
+			Roles:     roles,
+			CreatedAt: user.CreatedAt.Format(),
+		},
+	}
+
+	json.NewEncoder(w).Encode(sessionResponse)
 	return nil
 }
 
@@ -70,7 +85,25 @@ func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	if err != nil {
 		return NewAppError(err, "シフトリクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
-	json.NewEncoder(w).Encode(requests)
+
+	// モデルをDTOに変換
+	var requestsResponse dto.RequestsResponse
+	for _, req := range requests {
+		requestInfo := dto.RequestInfo{
+			ID: req.ID,
+			Creator: dto.UserInfo{
+				ID:   req.Creator.ID,
+				Name: req.Creator.Name,
+			},
+			StartDate: req.StartDate.Format(),
+			EndDate:   req.EndDate.Format(),
+			Deadline:  req.Deadline.Format(),
+			CreatedAt: req.CreatedAt.Format(),
+		}
+		requestsResponse = append(requestsResponse, requestInfo)
+	}
+
+	json.NewEncoder(w).Encode(requestsResponse)
 	return nil
 }
 
@@ -86,10 +119,48 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 		return NewAppError(err, "requestIdが整数ではありません", http.StatusBadRequest)
 	}
 
-	response, err := model.GetRequest(ctx, requestIdInt)
+	// リクエスト情報を取得
+	request, err := model.GetRequestByID(ctx, requestIdInt)
 	if err != nil {
+		// TODO: errcode修正
 		return NewAppError(err, "リクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
+
+	// エントリー情報を取得
+	entries, err := model.GetEntriesByRequestID(ctx, requestIdInt)
+	if err != nil {
+		return NewAppError(err, "エントリー情報の取得に失敗しました", http.StatusInternalServerError)
+	}
+
+	// DTOに変換
+	entriesInfo := []dto.EntryInfo{}
+	for _, entry := range entries {
+		entryInfo := dto.EntryInfo{
+			ID: entry.ID,
+			User: dto.UserInfo{
+				ID:   entry.User.ID,
+				Name: entry.User.Name,
+			},
+			Date: entry.Date.Format(),
+			Hour: entry.Hour,
+		}
+		entriesInfo = append(entriesInfo, entryInfo)
+	}
+
+	// レスポンスDTOを作成
+	response := dto.RequestDetailResponse{
+		ID: request.ID,
+		Creator: dto.UserInfo{
+			ID:   request.Creator.ID,
+			Name: request.Creator.Name,
+		},
+		StartDate: request.StartDate.Format(),
+		EndDate:   request.EndDate.Format(),
+		Deadline:  request.Deadline.Format(),
+		CreatedAt: request.CreatedAt.Format(),
+		Entries:   entriesInfo,
+	}
+
 	json.NewEncoder(w).Encode(response)
 	return nil
 }
@@ -101,25 +172,35 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
-	// リクエストボディの形式を定義する
-	type Body struct {
-		StartDate string `json:"start_date"`
-		EndDate   string `json:"end_date"`
-		Deadline  string `json:"deadline"`
-	}
-
-	// リクエストボディのバリデーション
-	var body Body
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	// リクエストボディのデコード
+	var createReq dto.CreateRequestRequest
+	if err := json.NewDecoder(r.Body).Decode(&createReq); err != nil {
 		return NewAppError(err, "リクエストボディのデコードに失敗しました", http.StatusBadRequest)
 	}
 
+	// DTOからモデルに変換
+	// 文字列の日付をモデルの型に変換
+	startDate, err := model.NewDateOnly(createReq.StartDate)
+	if err != nil {
+		return NewAppError(err, "開始日のフォーマットが不正です", http.StatusBadRequest)
+	}
+
+	endDate, err := model.NewDateOnly(createReq.EndDate)
+	if err != nil {
+		return NewAppError(err, "終了日のフォーマットが不正です", http.StatusBadRequest)
+	}
+
+	deadline, err := model.NewDateTime(createReq.Deadline)
+	if err != nil {
+		return NewAppError(err, "期限日のフォーマットが不正です", http.StatusBadRequest)
+	}
+
 	// 新しいシフトリクエストを作成する
-	response, err := model.CreateRequest(ctx, model.NewRequest{
+	requestID, err := model.CreateRequest(ctx, model.NewRequest{
 		CreatorID: userID,
-		StartDate: body.StartDate,
-		EndDate:   body.EndDate,
-		Deadline:  body.Deadline,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Deadline:  deadline,
 	})
 	if err != nil {
 		if errors.Is(err, model.ErrForbidden) {
@@ -132,6 +213,11 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 		}
 
 		return NewAppError(err, "シフトリクエストの作成に失敗しました", http.StatusInternalServerError)
+	}
+
+	// レスポンスDTOを作成
+	response := dto.CreateRequestResponse{
+		ID: requestID,
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -154,33 +240,35 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 		return NewAppError(err, "requestidが整数ではありません", http.StatusBadRequest)
 	}
 
-	// リクエストボディの形式を定義する
-	type Body []struct {
-		Date string `json:"date"`
-		Hour int    `json:"hour"`
-	}
-
-	// リクエストボディのバリデーション
-	var body Body
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	// リクエストボディのデコード
+	var entryRequests []dto.CreateEntryRequest
+	if err := json.NewDecoder(r.Body).Decode(&entryRequests); err != nil {
 		return NewAppError(err, "リクエストボディのデコードに失敗しました", http.StatusBadRequest)
 	}
 
 	// モデルに渡す形に変換する
 	entries := model.NewEntries{
-		ID:      requestIdInt,
-		UserID:  userID,
-		Entries: []model.NewEntry{},
+		RequestID: requestIdInt,
+		CreatorID: userID,
+		Entries:   []model.NewEntry{},
 	}
-	for _, entry := range body {
+
+	// DTOからモデルに変換
+	for _, entry := range entryRequests {
+		// 日付文字列をモデルの型に変換
+		dateOnly, err := model.NewDateOnly(entry.Date)
+		if err != nil {
+			return NewAppError(err, "日付のフォーマットが不正です", http.StatusBadRequest)
+		}
+
 		entries.Entries = append(entries.Entries, model.NewEntry{
-			Date: entry.Date,
+			Date: dateOnly,
 			Hour: entry.Hour,
 		})
 	}
 
 	// エントリーを作成する
-	response, err := model.CreateEntries(ctx, entries)
+	entryIDs, err := model.CreateEntries(ctx, entries)
 	if err != nil {
 		if errors.Is(err, model.ErrForbidden) {
 			return NewAppError(err, "権限がありません", http.StatusForbidden)
@@ -192,6 +280,17 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 		}
 
 		return NewAppError(err, "エントリーの作成に失敗しました", http.StatusInternalServerError)
+	}
+
+	// レスポンスDTOを作成
+	entriesResponse := make([]dto.EntryIDInfo, len(entryIDs))
+	for i, id := range entryIDs {
+		entriesResponse[i] = dto.EntryIDInfo{ID: id}
+	}
+
+	response := dto.CreateEntriesResponse{
+		ID:      requestIdInt,
+		Entries: entriesResponse,
 	}
 
 	// レスポンスを返す
