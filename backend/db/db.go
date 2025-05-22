@@ -12,23 +12,23 @@ type User struct {
 	Password  string
 	Name      string
 	Role      int
-	CreatedAt DateTime
+	CreatedAt string
 }
 
 type Request struct {
 	ID        int
 	CreatorID int
-	StartDate DateOnly
-	EndDate   DateOnly
-	Deadline  DateTime
-	CreatedAt DateTime
+	StartDate string
+	EndDate   string
+	Deadline  string
+	CreatedAt string
 }
 
 type Entry struct {
 	ID        int
 	RequestID int
 	UserID    int
-	Date      DateOnly
+	Date      string
 	Hour      int
 }
 
@@ -38,6 +38,6 @@ type DB interface {
 	GetRequests() ([]Request, error)
 	GetRequestByID(id int) (Request, error)
 	GetEntriesByRequestID(requestID int) ([]Entry, error)
-	CreateRequest(creatorID int, startDate DateOnly, endDate DateOnly, deadline DateTime) (int, error)
+	CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error)
 	CreateEntries(entries []Entry) ([]int, error)
 }

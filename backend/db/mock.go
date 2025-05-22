@@ -53,8 +53,8 @@ func (m *mockDB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	return entries, nil
 }
 
-func (m *mockDB) CreateRequest(creatorID int, startDate DateOnly, endDate DateOnly, deadline DateTime) (int, error) {
-	m.Requests = append(m.Requests, Request{ID: len(m.Requests) + 1, CreatorID: creatorID, StartDate: startDate, EndDate: endDate, Deadline: deadline, CreatedAt: DateTime(time.Now())})
+func (m *mockDB) CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error) {
+	m.Requests = append(m.Requests, Request{ID: len(m.Requests) + 1, CreatorID: creatorID, StartDate: startDate, EndDate: endDate, Deadline: deadline, CreatedAt: time.Now().Format(time.DateTime)})
 	return len(m.Requests), nil
 }
 
