@@ -37,7 +37,7 @@ func GetEntriesByRequestID(ctx *context.AppContext, requestID int) ([]Entry, err
 		}
 
 		// 時間型に変換
-		date, err := newDateOnly(entryRec.Date)
+		date, err := NewDateOnly(entryRec.Date)
 		if err != nil {
 			return nil, err
 		}

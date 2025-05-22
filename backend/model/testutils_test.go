@@ -11,7 +11,7 @@ func newTestContext(users []db.User, requests []db.Request, entries []db.Entry) 
 }
 
 func mustNewDateTime(s string) DateTime {
-	t, err := newDateTime(s)
+	t, err := NewDateTime(s)
 	if err != nil {
 		panic(err)
 	}
@@ -19,7 +19,7 @@ func mustNewDateTime(s string) DateTime {
 }
 
 func mustNewDateOnly(s string) DateOnly {
-	t, err := newDateOnly(s)
+	t, err := NewDateOnly(s)
 	if err != nil {
 		panic(err)
 	}

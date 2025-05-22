@@ -30,11 +30,11 @@ func GetRequestByID(ctx *context.AppContext, requestID int) (Request, error) {
 	}
 
 	// 日付を適切な型に変換
-	start_date, err := newDateOnly(requestRec.StartDate)
-	end_date, err := newDateOnly(requestRec.EndDate)
-	deadline, err := newDateTime(requestRec.Deadline)
-	reqCreated_at, err := newDateTime(requestRec.CreatedAt)
-	userCreated_at, err := newDateTime(userRec.CreatedAt)
+	start_date, err := NewDateOnly(requestRec.StartDate)
+	end_date, err := NewDateOnly(requestRec.EndDate)
+	deadline, err := NewDateTime(requestRec.Deadline)
+	reqCreated_at, err := NewDateTime(requestRec.CreatedAt)
+	userCreated_at, err := NewDateTime(userRec.CreatedAt)
 	if err != nil {
 		return Request{}, err
 	}
@@ -73,10 +73,10 @@ func GetRequests(ctx *context.AppContext) ([]Request, error) {
 		}
 
 		// 日付を適切な型に変換
-		startDate, err := newDateOnly(rec.StartDate)
-		endDate, err := newDateOnly(rec.EndDate)
-		deadline, err := newDateTime(rec.Deadline)
-		reqCreatedAt, err := newDateTime(rec.CreatedAt)
+		startDate, err := NewDateOnly(rec.StartDate)
+		endDate, err := NewDateOnly(rec.EndDate)
+		deadline, err := NewDateTime(rec.Deadline)
+		reqCreatedAt, err := NewDateTime(rec.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

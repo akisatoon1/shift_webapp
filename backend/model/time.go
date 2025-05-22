@@ -4,7 +4,7 @@ import "time"
 
 type DateTime time.Time
 
-func newDateTime(s string) (DateTime, error) {
+func NewDateTime(s string) (DateTime, error) {
 	var t DateTime
 	if err := t.parse(s); err != nil {
 		return DateTime{}, err
@@ -29,7 +29,7 @@ func (t *DateTime) Format() string {
 
 type DateOnly time.Time
 
-func newDateOnly(s string) (DateOnly, error) {
+func NewDateOnly(s string) (DateOnly, error) {
 	var t DateOnly
 	if err := t.parse(s); err != nil {
 		return DateOnly{}, err

@@ -18,7 +18,7 @@ func GetUserByID(ctx *context.AppContext, userID int) (User, error) {
 		return User{}, err
 	}
 
-	createdAt, err := newDateTime(userRec.CreatedAt)
+	createdAt, err := NewDateTime(userRec.CreatedAt)
 	if err != nil {
 		return User{}, err
 	}
