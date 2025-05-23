@@ -48,10 +48,12 @@ func GetSessionRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 
 	// レスポンスDTOを作成
 	roles := []string{}
-	if user.Role == 1 {
+	// TODO: 抽象化できていない
+	if (user.Role & auth.RoleEmployee) != 0 {
 		roles = append(roles, "employee")
-	} else {
-		roles = append(roles, "user")
+	}
+	if (user.Role & auth.RoleManager) != 0 {
+		roles = append(roles, "manager")
 	}
 
 	sessionResponse := dto.SessionResponse{
