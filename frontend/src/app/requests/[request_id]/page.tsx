@@ -35,6 +35,8 @@ export default function RequestDetailPage() {
     const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [userRoles, setUserRoles] = useState<string[]>([]);
+    const [userLoaded, setUserLoaded] = useState(false);
 
     async function fetchRequestDetail() {
         if (!requestId) return;
@@ -57,6 +59,26 @@ export default function RequestDetailPage() {
             setLoading(false);
         }
     }
+
+    // ユーザ情報取得
+    useEffect(() => {
+        async function fetchSession() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/session`, { credentials: "include" });
+                if (!res.ok) {
+                    setUserRoles([]);
+                } else {
+                    const data = await res.json();
+                    setUserRoles(data.user?.roles || []);
+                }
+            } catch {
+                setUserRoles([]);
+            } finally {
+                setUserLoaded(true);
+            }
+        }
+        fetchSession();
+    }, []);
 
     useEffect(() => {
         fetchRequestDetail();
@@ -123,12 +145,14 @@ export default function RequestDetailPage() {
                     >
                         リクエスト一覧へ戻る
                     </a>
-                    <a
-                        href={`/requests/${requestId}/submit${startDate && endDate ? `?start_date=${startDate}&end_date=${endDate}` : ''}`}
-                        className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition mr-2"
-                    >
-                        エントリー提出ページへ
-                    </a>
+                    {userLoaded && userRoles.includes("employee") && (
+                        <a
+                            href={`/requests/${requestId}/submit${startDate && endDate ? `?start_date=${startDate}&end_date=${endDate}` : ''}`}
+                            className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition mr-2"
+                        >
+                            エントリー提出ページへ
+                        </a>
+                    )}
                     {/* 表示切り替えボタン */}
                     <button
                         className={`inline-block px-4 py-2 rounded font-semibold border ml-2 ${viewMode === 'user' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-400'}`}
