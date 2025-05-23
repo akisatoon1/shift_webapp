@@ -17,6 +17,7 @@ func TestGetRequestByID(t *testing.T) {
 		[]db.Entry{},
 	)
 
+	// 正常系
 	got, err := GetRequestByID(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -32,6 +33,12 @@ func TestGetRequestByID(t *testing.T) {
 	}
 
 	assert(t, got, want)
+
+	// 異常系
+	_, err = GetRequestByID(ctx, 999)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
 }
 
 func TestGetRequests(t *testing.T) {
@@ -52,8 +59,8 @@ func TestGetRequests(t *testing.T) {
 	}
 
 	want := []Request{
-		Request{ID: 1, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
-		Request{ID: 2, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
+		{ID: 1, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
+		{ID: 2, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
 	}
 
 	assert(t, got, want)
@@ -62,12 +69,14 @@ func TestGetRequests(t *testing.T) {
 func TestCreateRequest(t *testing.T) {
 	ctx := newTestContext(
 		[]db.User{
-			{ID: 2, Name: "テストマネージャー", Role: auth.RoleManager},
+			{ID: 1, LoginID: "test_user", Password: "password", Name: "テストユーザー", Role: auth.RoleEmployee},
+			{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Request{},
 		[]db.Entry{},
 	)
 
+	// 正常系
 	got, err := CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -75,4 +84,30 @@ func TestCreateRequest(t *testing.T) {
 
 	want := 1
 	assert(t, got, want)
+
+	// 異常系
+
+	// 作成者が存在しない場合
+	_, err = CreateRequest(ctx, NewRequest{CreatorID: 999, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	// 作成者がマネージャーでない場合
+	_, err = CreateRequest(ctx, NewRequest{CreatorID: 1, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	// 開始日が終了日より後の場合
+	_, err = CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-02"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	// 締切日が開始日より後の場合
+	_, err = CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-02 00:00:00")})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
 }

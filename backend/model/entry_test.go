@@ -44,6 +44,8 @@ func TestCreateEntries(t *testing.T) {
 		},
 		[]db.Entry{},
 	)
+
+	// 正常系
 	got, err := CreateEntries(ctx, NewEntries{RequestID: 1, CreatorID: 1, Entries: []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}, {Date: mustNewDateOnly("2024-06-01"), Hour: 9}}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -51,4 +53,36 @@ func TestCreateEntries(t *testing.T) {
 
 	want := []int{1, 2}
 	assert(t, got, want)
+
+	// 異常系
+
+	// 存在しないリクエストID
+	_, err = CreateEntries(ctx, NewEntries{RequestID: 999, CreatorID: 1, Entries: []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}}})
+	if err == nil {
+		t.Fatalf("expected error for non-existent request ID")
+	}
+
+	// 作成者が存在しない
+	_, err = CreateEntries(ctx, NewEntries{RequestID: 1, CreatorID: 999, Entries: []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}}})
+	if err == nil {
+		t.Fatalf("expected error for non-existent creator ID")
+	}
+
+	// 作成者がemployeeでない場合
+	_, err = CreateEntries(ctx, NewEntries{RequestID: 1, CreatorID: 2, Entries: []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}}})
+	if err == nil {
+		t.Fatalf("expected error for non-employee creator")
+	}
+
+	// 日付がリクエストの範囲外
+	_, err = CreateEntries(ctx, NewEntries{RequestID: 1, CreatorID: 1, Entries: []NewEntry{{Date: mustNewDateOnly("2024-06-02"), Hour: 8}}})
+	if err == nil {
+		t.Fatalf("expected error for date outside request range")
+	}
+
+	// 時間が0未満または24以上
+	_, err = CreateEntries(ctx, NewEntries{RequestID: 1, CreatorID: 1, Entries: []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: -1}}})
+	if err == nil {
+		t.Fatalf("expected error for hour less than 0")
+	}
 }
