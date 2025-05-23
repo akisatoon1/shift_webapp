@@ -23,6 +23,7 @@ export default function RequestsPage() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [deadline, setDeadline] = useState("");
+    const [deadlineTime, setDeadlineTime] = useState("00:00");
     const [createError, setCreateError] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
     const [userRoles, setUserRoles] = useState<string[]>([]);
@@ -54,6 +55,9 @@ export default function RequestsPage() {
         setCreateError("");
         setCreateLoading(true);
         try {
+            // Format deadline as "yyyy-mm-dd HH:MM:SS"
+            const formattedDeadline = `${deadline} ${deadlineTime}:00`;
+
             const res = await fetch(`${API_BASE_URL}/requests`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -61,7 +65,7 @@ export default function RequestsPage() {
                 body: JSON.stringify({
                     start_date: startDate,
                     end_date: endDate,
-                    deadline: deadline,
+                    deadline: formattedDeadline,
                 }),
             });
             if (!res.ok) {
@@ -71,6 +75,7 @@ export default function RequestsPage() {
                 setStartDate("");
                 setEndDate("");
                 setDeadline("");
+                setDeadlineTime("00:00");
                 await fetchRequests();
             }
         } catch (e) {
@@ -121,8 +126,12 @@ export default function RequestsPage() {
                             <input type="date" className="border rounded px-2 py-1" value={endDate} onChange={e => setEndDate(e.target.value)} required disabled={createLoading} />
                         </div>
                         <div className="flex flex-col">
-                            <label className="text-sm">提出期限</label>
+                            <label className="text-sm">提出期限（日付）</label>
                             <input type="date" className="border rounded px-2 py-1" value={deadline} onChange={e => setDeadline(e.target.value)} required disabled={createLoading} />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-sm">提出期限（時間）</label>
+                            <input type="time" className="border rounded px-2 py-1" value={deadlineTime} onChange={e => setDeadlineTime(e.target.value)} required disabled={createLoading} />
                         </div>
                         <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50" disabled={createLoading}>追加</button>
                     </form>
