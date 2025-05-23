@@ -3,7 +3,6 @@ package model
 import (
 	"backend/auth"
 	"backend/db"
-	"reflect"
 	"testing"
 )
 
@@ -32,9 +31,7 @@ func TestGetRequestByID(t *testing.T) {
 		CreatedAt: mustNewDateTime("2024-06-01 00:00:00"),
 	}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
-	}
+	assert(t, got, want)
 }
 
 func TestGetRequests(t *testing.T) {
@@ -59,9 +56,7 @@ func TestGetRequests(t *testing.T) {
 		Request{ID: 2, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
 	}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
-	}
+	assert(t, got, want)
 }
 
 func TestCreateRequest(t *testing.T) {
@@ -79,7 +74,5 @@ func TestCreateRequest(t *testing.T) {
 	}
 
 	want := 1
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
-	}
+	assert(t, got, want)
 }

@@ -3,7 +3,6 @@ package model
 import (
 	"backend/auth"
 	"backend/db"
-	"reflect"
 	"testing"
 )
 
@@ -30,7 +29,5 @@ func TestGetUserByID(t *testing.T) {
 		CreatedAt: mustNewDateTime("2024-06-01 00:00:00"),
 	}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
-	}
+	assert(t, got, want)
 }

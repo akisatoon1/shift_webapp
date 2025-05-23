@@ -3,6 +3,8 @@ package model
 import (
 	"backend/context"
 	"backend/db"
+	"reflect"
+	"testing"
 )
 
 // 新たなテスト用コンテキストを作成
@@ -24,4 +26,10 @@ func mustNewDateOnly(s string) DateOnly {
 		panic(err)
 	}
 	return t
+}
+
+func assert(t *testing.T, got, want interface{}) {
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
 }
