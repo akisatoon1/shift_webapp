@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
 
+// TODO: 未提出と選択0の提出済みの区別
 // TODO: 更新や削除はどうする？
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -66,11 +67,6 @@ export default function EntrySubmitPage() {
             .flatMap(([date, hours]) =>
                 Array.from(hours).map(hour => ({ date, hour }))
             );
-        if (submitEntries.length === 0) {
-            setSubmitError("1つ以上のセルを選択してください");
-            setSubmitLoading(false);
-            return;
-        }
         try {
             const res = await fetch(`${API_BASE_URL}/requests/${requestId}/entries`, {
                 method: "POST",
