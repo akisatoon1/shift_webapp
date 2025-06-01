@@ -105,6 +105,27 @@ func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	return entries, nil
 }
 
+func (db *Sqlite3DB) GetSubmissionsByRequestID(requestID int) ([]Submission, error) {
+	rows, err := db.Conn.Query("SELECT id, request_id, submitter_id, created_at, updated_at FROM submissions WHERE request_id = ?", requestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var submissions []Submission
+	for rows.Next() {
+		var submission Submission
+		err := rows.Scan(&submission.ID, &submission.RequestID, &submission.SubmitterID, &submission.CreatedAt, &submission.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		submissions = append(submissions, submission)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
 // 新しいシフトリクエストを作成
 func (db *Sqlite3DB) CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error) {
 	res, err := db.Conn.Exec(

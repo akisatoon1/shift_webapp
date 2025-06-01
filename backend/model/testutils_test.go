@@ -8,8 +8,8 @@ import (
 )
 
 // 新たなテスト用コンテキストを作成
-func newTestContext(users []db.User, requests []db.Request, entries []db.Entry) *context.AppContext {
-	return context.NewAppContext(db.NewMockDB(requests, users, entries), nil)
+func newTestContext(users []db.User, requests []db.Request, entries []db.Entry, submissions []db.Submission) *context.AppContext {
+	return context.NewAppContext(db.NewMockDB(requests, users, entries, submissions), nil)
 }
 
 func mustNewDateTime(s string) DateTime {

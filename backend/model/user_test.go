@@ -13,6 +13,7 @@ func TestGetUserByID(t *testing.T) {
 		},
 		[]db.Request{},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 
 	// 正常系

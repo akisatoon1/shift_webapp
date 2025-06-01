@@ -107,6 +107,13 @@
     "deadline": string,
     "created_at": string,
 
+    "submissions": {
+        "submitter": {
+            "id": number,
+            "name": string
+        }
+    }[],
+
     "entries": {
         "id": number,
         "user": {

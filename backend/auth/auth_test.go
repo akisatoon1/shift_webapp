@@ -46,7 +46,7 @@ func TestGetUserID(t *testing.T) {
 }
 
 func newTestContext(user db.User, store *sessions.CookieStore) *context.AppContext {
-	return context.NewAppContext(db.NewMockDB(nil, []db.User{user}, nil), store)
+	return context.NewAppContext(db.NewMockDB(nil, []db.User{user}, nil, nil), store)
 }
 
 func TestIsEmployee(t *testing.T) {

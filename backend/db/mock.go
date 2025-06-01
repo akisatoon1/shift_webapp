@@ -7,9 +7,10 @@ import (
 
 // モック用のDB構造体
 type mockDB struct {
-	Requests []Request
-	Users    []User
-	Entries  []Entry
+	Requests    []Request
+	Users       []User
+	Entries     []Entry
+	Submissions []Submission
 }
 
 func (m *mockDB) GetRequests() ([]Request, error) {
@@ -53,6 +54,16 @@ func (m *mockDB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	return entries, nil
 }
 
+func (m *mockDB) GetSubmissionsByRequestID(requestID int) ([]Submission, error) {
+	submissions := []Submission{}
+	for _, submission := range m.Submissions {
+		if submission.RequestID == requestID {
+			submissions = append(submissions, submission)
+		}
+	}
+	return submissions, nil
+}
+
 func (m *mockDB) CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error) {
 	m.Requests = append(m.Requests, Request{ID: len(m.Requests) + 1, CreatorID: creatorID, StartDate: startDate, EndDate: endDate, Deadline: deadline, CreatedAt: time.Now().Format(time.DateTime)})
 	return len(m.Requests), nil
@@ -71,10 +82,11 @@ func (m *mockDB) CreateEntries(entries []Entry) ([]int, error) {
 }
 
 // テスト用データを入れたモックDBを生成
-func NewMockDB(requests []Request, users []User, entries []Entry) *mockDB {
+func NewMockDB(requests []Request, users []User, entries []Entry, submissions []Submission) *mockDB {
 	return &mockDB{
-		Requests: requests,
-		Users:    users,
-		Entries:  entries,
+		Requests:    requests,
+		Users:       users,
+		Entries:     entries,
+		Submissions: submissions,
 	}
 }

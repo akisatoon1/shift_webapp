@@ -36,3 +36,8 @@ type EntryInfo struct {
 type EntryIDInfo struct {
 	ID int `json:"id"`
 }
+
+// SubmissionInfo はシフト提出情報の構造体です
+type SubmissionInfo struct {
+	Submitter UserInfo `json:"submitter"`
+}

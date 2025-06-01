@@ -15,6 +15,7 @@ func TestGetRequestByID(t *testing.T) {
 			{ID: 1, CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 
 	// 正常系
@@ -51,6 +52,7 @@ func TestGetRequests(t *testing.T) {
 			{ID: 2, CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 
 	got, err := GetRequests(ctx)
@@ -74,6 +76,7 @@ func TestCreateRequest(t *testing.T) {
 		},
 		[]db.Request{},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 
 	// 正常系

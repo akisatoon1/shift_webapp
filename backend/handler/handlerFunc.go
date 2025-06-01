@@ -128,13 +128,31 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 		return NewAppError(err, "リクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
 
+	// 提出情報を取得
+	submissions, err := model.GetSubmissionsByRequestID(ctx, requestIdInt)
+	if err != nil {
+		return NewAppError(err, "提出情報の取得に失敗しました", http.StatusInternalServerError)
+	}
+
+	// 提出情報をDTOに変換
+	submissionsInfo := []dto.SubmissionInfo{}
+	for _, submission := range submissions {
+		submissionInfo := dto.SubmissionInfo{
+			Submitter: dto.UserInfo{
+				ID:   submission.Submitter.ID,
+				Name: submission.Submitter.Name,
+			},
+		}
+		submissionsInfo = append(submissionsInfo, submissionInfo)
+	}
+
 	// エントリー情報を取得
 	entries, err := model.GetEntriesByRequestID(ctx, requestIdInt)
 	if err != nil {
 		return NewAppError(err, "エントリー情報の取得に失敗しました", http.StatusInternalServerError)
 	}
 
-	// DTOに変換
+	// エントリー情報をDTOに変換
 	entriesInfo := []dto.EntryInfo{}
 	for _, entry := range entries {
 		entryInfo := dto.EntryInfo{
@@ -156,11 +174,12 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 			ID:   request.Creator.ID,
 			Name: request.Creator.Name,
 		},
-		StartDate: request.StartDate.Format(),
-		EndDate:   request.EndDate.Format(),
-		Deadline:  request.Deadline.Format(),
-		CreatedAt: request.CreatedAt.Format(),
-		Entries:   entriesInfo,
+		StartDate:   request.StartDate.Format(),
+		EndDate:     request.EndDate.Format(),
+		Deadline:    request.Deadline.Format(),
+		CreatedAt:   request.CreatedAt.Format(),
+		Submissions: submissionsInfo,
+		Entries:     entriesInfo,
 	}
 
 	json.NewEncoder(w).Encode(response)

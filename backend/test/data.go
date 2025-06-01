@@ -33,3 +33,10 @@ var MockEntries = []db.Entry{
 	{ID: 5, RequestID: 2, UserID: 3, Date: "2024-02-03", Hour: 10},
 	{ID: 6, RequestID: 2, UserID: 3, Date: "2024-02-04", Hour: 12},
 }
+
+var MockSubmissions = []db.Submission{
+	{ID: 1, RequestID: 1, SubmitterID: 1, CreatedAt: "2024-01-01 12:00:00", UpdatedAt: "2024-01-01 12:00:00"},
+	{ID: 2, RequestID: 1, SubmitterID: 3, CreatedAt: "2024-01-02 12:00:00", UpdatedAt: "2024-01-02 12:00:00"},
+	{ID: 3, RequestID: 2, SubmitterID: 1, CreatedAt: "2024-02-01 12:00:00", UpdatedAt: "2024-02-01 12:00:00"},
+	{ID: 4, RequestID: 2, SubmitterID: 3, CreatedAt: "2024-02-02 12:00:00", UpdatedAt: "2024-02-02 12:00:00"},
+}

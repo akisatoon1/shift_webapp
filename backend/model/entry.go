@@ -31,6 +31,7 @@ func GetEntriesByRequestID(ctx *context.AppContext, requestID int) ([]Entry, err
 	// エントリー一覧を構築
 	var entries []Entry
 	for _, entryRec := range entryRecs {
+		// TODO: 最適化(他の箇所もあるかも)
 		user, err := GetUserByID(ctx, entryRec.UserID)
 		if err != nil {
 			return nil, err

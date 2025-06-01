@@ -17,13 +17,14 @@ type CreateRequestResponse struct {
 
 // RequestDetailResponse はリクエスト詳細レスポンスの構造体です
 type RequestDetailResponse struct {
-	ID        int         `json:"id"`
-	Creator   UserInfo    `json:"creator"`
-	StartDate string      `json:"start_date"`
-	EndDate   string      `json:"end_date"`
-	Deadline  string      `json:"deadline"`
-	CreatedAt string      `json:"created_at"`
-	Entries   []EntryInfo `json:"entries"`
+	ID          int              `json:"id"`
+	Creator     UserInfo         `json:"creator"`
+	StartDate   string           `json:"start_date"`
+	EndDate     string           `json:"end_date"`
+	Deadline    string           `json:"deadline"`
+	CreatedAt   string           `json:"created_at"`
+	Submissions []SubmissionInfo `json:"submissions"`
+	Entries     []EntryInfo      `json:"entries"`
 }
 
 // CreateEntriesResponse はエントリー作成レスポンスの構造体です

@@ -64,8 +64,8 @@ func addCookiesToRequest(req *http.Request, cookies []*http.Cookie) {
 	}
 }
 
-func newTestContext(requests []db.Request, users []db.User, entries []db.Entry) *context.AppContext {
-	return context.NewAppContext(db.NewMockDB(requests, users, entries), sessions.NewCookieStore([]byte("test-secret")))
+func newTestContext(requests []db.Request, users []db.User, entries []db.Entry, submissions []db.Submission) *context.AppContext {
+	return context.NewAppContext(db.NewMockDB(requests, users, entries, submissions), sessions.NewCookieStore([]byte("test-secret")))
 }
 
 // 1つのAPIエンドポイントに、1つのハンドラーをセットする
@@ -86,6 +86,7 @@ func TestGetRequestsHandler(t *testing.T) {
 			{ID: 2, LoginID: "test_user", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests", GetRequestsRequest)
 
@@ -137,6 +138,10 @@ func TestGetRequestHandler(t *testing.T) {
 			{ID: 1, RequestID: 1, UserID: 1, Date: "2024-06-01", Hour: 8},
 			{ID: 2, RequestID: 1, UserID: 2, Date: "2024-06-01", Hour: 8},
 		},
+		[]db.Submission{
+			{ID: 1, RequestID: 1, SubmitterID: 1, CreatedAt: "2024-06-01 00:00:00", UpdatedAt: "2024-06-01 00:00:00"},
+			{ID: 2, RequestID: 1, SubmitterID: 2, CreatedAt: "2024-06-01 00:00:00", UpdatedAt: "2024-06-01 00:00:00"},
+		},
 	)
 	mux := setHandlerToEndpoint(appCtx, "GET /requests/{id}", GetRequestRequest)
 
@@ -158,6 +163,14 @@ func TestGetRequestHandler(t *testing.T) {
 		"end_date": "2024-06-01",
 		"deadline": "2024-06-01 00:00:00",
 		"created_at": "2024-06-01 00:00:00",
+		"submissions": [
+			{
+				"submitter": {"id": 1, "name": "テストユーザー1"}
+			},
+			{
+				"submitter": {"id": 2, "name": "テストユーザー2"}
+			}
+		],
 		"entries": [
 			{
 				"id": 1,
@@ -185,6 +198,7 @@ func TestPostRequestsHandler(t *testing.T) {
 			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "POST /requests", PostRequestsRequest)
 
@@ -225,6 +239,7 @@ func TestPostEntriesHandler(t *testing.T) {
 			{ID: 2, LoginID: "test_manager", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/entries", PostEntriesRequest)
 
@@ -269,6 +284,7 @@ func TestLoginHandler(t *testing.T) {
 			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "POST /login", LoginRequest)
 
@@ -318,6 +334,7 @@ func TestGetSessionHandler(t *testing.T) {
 			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Role: auth.RoleEmployee, Name: "テストユーザー", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "GET /session", GetSessionRequest)
 
@@ -352,6 +369,7 @@ func TestLogoutHandler(t *testing.T) {
 			{ID: 1, LoginID: "test_user", Password: string(hashedPassword), Name: "テストユーザー"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 	mux := setHandlerToEndpoint(appCtx, "DELETE /session", LogoutRequest)
 

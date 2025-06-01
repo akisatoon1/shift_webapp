@@ -1,3 +1,5 @@
+-- TODO: unique制約
+
 -- ユーザーテーブル
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,5 +40,17 @@ CREATE TABLE IF NOT EXISTS entries (
     hour INTEGER NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (request_id) REFERENCES requests(id)
+);
+
+-- シフト提出テーブル
+CREATE TABLE IF NOT EXISTS submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_id INTEGER NOT NULL,
+    submitter_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
+    updated_at TEXT NOT NULL,
+
+    FOREIGN KEY (submitter_id) REFERENCES users(id),
     FOREIGN KEY (request_id) REFERENCES requests(id)
 );

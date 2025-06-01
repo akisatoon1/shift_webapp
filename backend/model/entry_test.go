@@ -20,6 +20,7 @@ func TestGetEntriesByRequestID(t *testing.T) {
 			{ID: 1, UserID: 1, RequestID: 1, Date: "2024-06-01", Hour: 8},
 			{ID: 2, UserID: 2, RequestID: 1, Date: "2024-06-01", Hour: 8},
 		},
+		[]db.Submission{},
 	)
 	got, err := GetEntriesByRequestID(ctx, 1)
 	if err != nil {
@@ -43,6 +44,7 @@ func TestCreateEntries(t *testing.T) {
 			{ID: 1, CreatorID: 2, StartDate: "2024-06-01", EndDate: "2024-06-01", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{},
+		[]db.Submission{},
 	)
 
 	// 正常系

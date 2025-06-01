@@ -44,7 +44,7 @@ func main() {
 
 	if mode == "test" {
 		log.Println("テストモードで起動します(mock DB使用)")
-		database = db.NewMockDB(test.MockRequests, test.MockUsers, test.MockEntries)
+		database = db.NewMockDB(test.MockRequests, test.MockUsers, test.MockEntries, test.MockSubmissions)
 	} else {
 		log.Println("本番モードで起動します(SQLite3使用)")
 		// DBの初期化
