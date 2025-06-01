@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { get, del } from "./lib/api";
 
 export default function Header() {
     const router = useRouter();
@@ -19,17 +20,14 @@ export default function Header() {
         setIsLoading(true);
         try {
             const api_base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
-            const response = await fetch(`${api_base_url}/session`, {
-                method: "GET",
-                credentials: "include",
-            });
+            const response = await get(`${api_base_url}/session`);
 
-            if (response.ok) {
+            // ログインページへのリダイレクトは get() で自動的に処理される
+            if (response && response.ok) {
                 const data = await response.json();
                 setUserName(data.user.name);
-            } else {
+            } else if (response) {
                 console.error("Failed to fetch user info");
-                router.push("/login");
             }
         } catch (error) {
             console.error("Error fetching user info:", error);
@@ -40,10 +38,7 @@ export default function Header() {
 
     const handleLogout = async () => {
         const api_base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
-        await fetch(`${api_base_url}/session`, {
-            method: "DELETE",
-            credentials: "include",
-        });
+        await del(`${api_base_url}/session`);
         router.push("/login");
     };
 
