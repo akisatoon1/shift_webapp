@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
+import { get } from "../../lib/api";
 
 type Entry = {
     id: number;
@@ -26,8 +27,6 @@ type RequestDetail = {
     entries: Entry[];
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export default function RequestDetailPage() {
     const params = useParams();
     const searchParams = useSearchParams();
@@ -43,15 +42,13 @@ export default function RequestDetailPage() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch(`${API_BASE_URL}/requests/${requestId}`, {
-                credentials: "include",
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                setError(data.error || "取得に失敗しました");
-            } else {
+            const res = await get(`/requests/${requestId}`);
+            if (res && res.ok) {
                 const data = await res.json();
                 setRequestDetail(data);
+            } else if (res) {
+                const data = await res.json();
+                setError(data.error || "取得に失敗しました");
             }
         } catch (e) {
             setError("通信エラーが発生しました");
@@ -64,12 +61,12 @@ export default function RequestDetailPage() {
     useEffect(() => {
         async function fetchSession() {
             try {
-                const res = await fetch(`${API_BASE_URL}/session`, { credentials: "include" });
-                if (!res.ok) {
-                    setUserRoles([]);
-                } else {
+                const res = await get(`/session`);
+                if (res && res.ok) {
                     const data = await res.json();
                     setUserRoles(data.user?.roles || []);
+                } else {
+                    setUserRoles([]);
                 }
             } catch {
                 setUserRoles([]);

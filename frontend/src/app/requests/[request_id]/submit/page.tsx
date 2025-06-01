@@ -2,11 +2,10 @@
 import React, { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
+import { post } from "../../../lib/api";
 
 // TODO: 未提出と選択0の提出済みの区別
 // TODO: 更新や削除はどうする？
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function EntrySubmitPage() {
     const params = useParams();
@@ -68,21 +67,16 @@ export default function EntrySubmitPage() {
                 Array.from(hours).map(hour => ({ date, hour }))
             );
         try {
-            const res = await fetch(`${API_BASE_URL}/requests/${requestId}/entries`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(submitEntries),
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                setSubmitError(data.error || "提出に失敗しました");
-            } else {
+            const res = await post(`/requests/${requestId}/entries`, submitEntries);
+            if (res && res.ok) {
                 setSuccess(true);
                 setSelected({});
                 setTimeout(() => {
                     router.push(`/requests/${requestId}`);
                 }, 1200);
+            } else if (res) {
+                const data = await res.json();
+                setSubmitError(data.error || "提出に失敗しました");
             }
         } catch (e) {
             setSubmitError("通信エラーが発生しました");

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { get, post } from "../lib/api";
 
 type Request = {
     id: number;
@@ -13,8 +14,6 @@ type Request = {
     deadline: string;
     created_at: string;
 };
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function RequestsPage() {
     const [requests, setRequests] = useState<Request[]>([]);
@@ -34,12 +33,12 @@ export default function RequestsPage() {
     useEffect(() => {
         async function fetchSession() {
             try {
-                const res = await fetch(`${API_BASE_URL}/session`, { credentials: "include" });
-                if (!res.ok) {
-                    setUserRoles([]);
-                } else {
+                const res = await get(`/session`);
+                if (res && res.ok) {
                     const data = await res.json();
                     setUserRoles(data.user?.roles || []);
+                } else {
+                    setUserRoles([]);
                 }
             } catch {
                 setUserRoles([]);
@@ -58,25 +57,21 @@ export default function RequestsPage() {
             // Format deadline as "yyyy-mm-dd HH:MM:SS"
             const formattedDeadline = `${deadline} ${deadlineTime}:00`;
 
-            const res = await fetch(`${API_BASE_URL}/requests`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    start_date: startDate,
-                    end_date: endDate,
-                    deadline: formattedDeadline,
-                }),
+            const res = await post(`/requests`, {
+                start_date: startDate,
+                end_date: endDate,
+                deadline: formattedDeadline,
             });
-            if (!res.ok) {
-                const data = await res.json();
-                setCreateError(data.error || "作成に失敗しました");
-            } else {
+
+            if (res && res.ok) {
                 setStartDate("");
                 setEndDate("");
                 setDeadline("");
                 setDeadlineTime("00:00");
                 await fetchRequests();
+            } else if (res) {
+                const data = await res.json();
+                setCreateError(data.error || "作成に失敗しました");
             }
         } catch (e) {
             setCreateError("通信エラーが発生しました");
@@ -89,15 +84,13 @@ export default function RequestsPage() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch(`${API_BASE_URL}/requests`, {
-                credentials: "include",
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                setError(data.error || "取得に失敗しました");
-            } else {
+            const res = await get(`/requests`);
+            if (res && res.ok) {
                 const data = await res.json();
                 setRequests(data);
+            } else if (res) {
+                const data = await res.json();
+                setError(data.error || "取得に失敗しました");
             }
         } catch (e) {
             setError("通信エラーが発生しました");

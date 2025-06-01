@@ -1,10 +1,15 @@
 // Fetch APIをラップして、401エラーを自動的に処理するためのユーティリティ
 
+// API ベースURLの設定
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 /**
  * 共通のAPI呼び出し関数
  * 401エラー時に自動的にログインページにリダイレクトします
  */
-export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
+    // API ベースURLとエンドポイントを結合
+    const url = `${API_BASE_URL}${endpoint}`;
     // クッキーを含めるためのデフォルトオプション
     const defaultOptions: RequestInit = {
         credentials: 'include',
@@ -31,8 +36,8 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 /**
  * GETリクエスト用のショートハンド関数
  */
-export const get = async (url: string, options: RequestInit = {}) => {
-    return fetchWithAuth(url, {
+export const get = async (endpoint: string, options: RequestInit = {}) => {
+    return fetchWithAuth(endpoint, {
         method: 'GET',
         ...options,
     });
@@ -41,8 +46,8 @@ export const get = async (url: string, options: RequestInit = {}) => {
 /**
  * POSTリクエスト用のショートハンド関数
  */
-export const post = async (url: string, data: any, options: RequestInit = {}) => {
-    return fetchWithAuth(url, {
+export const post = async (endpoint: string, data: any, options: RequestInit = {}) => {
+    return fetchWithAuth(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -56,8 +61,8 @@ export const post = async (url: string, data: any, options: RequestInit = {}) =>
 /**
  * DELETEリクエスト用のショートハンド関数
  */
-export const del = async (url: string, options: RequestInit = {}) => {
-    return fetchWithAuth(url, {
+export const del = async (endpoint: string, options: RequestInit = {}) => {
+    return fetchWithAuth(endpoint, {
         method: 'DELETE',
         ...options,
     });

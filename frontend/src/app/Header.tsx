@@ -19,8 +19,7 @@ export default function Header() {
     const fetchUserInfo = async () => {
         setIsLoading(true);
         try {
-            const api_base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
-            const response = await get(`${api_base_url}/session`);
+            const response = await get(`/session`);
 
             // ログインページへのリダイレクトは get() で自動的に処理される
             if (response && response.ok) {
