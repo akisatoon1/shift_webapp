@@ -44,10 +44,10 @@ func (m *mockDB) GetUserByLoginID(loginID string) (User, error) {
 	return User{}, ErrUserNotFound
 }
 
-func (m *mockDB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
+func (m *mockDB) GetEntriesBySubmissionID(submissionID int) ([]Entry, error) {
 	entries := []Entry{}
 	for _, entry := range m.Entries {
-		if entry.RequestID == requestID {
+		if entry.SubmissionID == submissionID {
 			entries = append(entries, entry)
 		}
 	}
@@ -79,6 +79,18 @@ func (m *mockDB) CreateEntries(entries []Entry) ([]int, error) {
 		ids = append(ids, id)
 	}
 	return ids, nil
+}
+
+func (m *mockDB) CreateSubmission(submitterID int, requestID int) (int, error) {
+	submission := Submission{
+		ID:          len(m.Submissions) + 1,
+		RequestID:   requestID,
+		SubmitterID: submitterID,
+		CreatedAt:   time.Now().Format(time.DateTime),
+		UpdatedAt:   time.Now().Format(time.DateTime),
+	}
+	m.Submissions = append(m.Submissions, submission)
+	return submission.ID, nil
 }
 
 // テスト用データを入れたモックDBを生成

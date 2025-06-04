@@ -86,8 +86,8 @@ func (db *Sqlite3DB) GetRequestByID(id int) (Request, error) {
 }
 
 // 指定リクエストIDのエントリー一覧を取得
-func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
-	rows, err := db.Conn.Query("SELECT id, request_id, user_id, date, hour FROM entries WHERE request_id = ?", requestID)
+func (db *Sqlite3DB) GetEntriesBySubmissionID(submissionID int) ([]Entry, error) {
+	rows, err := db.Conn.Query("SELECT id, submission_id, date, hour FROM entries WHERE submission_id = ?", submissionID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (db *Sqlite3DB) GetEntriesByRequestID(requestID int) ([]Entry, error) {
 	var entries []Entry
 	for rows.Next() {
 		var entry Entry
-		err := rows.Scan(&entry.ID, &entry.RequestID, &entry.UserID, &entry.Date, &entry.Hour)
+		err := rows.Scan(&entry.ID, &entry.SubmissionID, &entry.Date, &entry.Hour)
 		if err != nil {
 			return nil, err
 		}
@@ -144,10 +144,10 @@ func (db *Sqlite3DB) CreateRequest(creatorID int, startDate string, endDate stri
 }
 
 // 新しい1つのエントリーを作成
-func (db *Sqlite3DB) createEntry(requestID int, userID int, date string, hour int) (int, error) {
+func (db *Sqlite3DB) createEntry(submissionID int, date string, hour int) (int, error) {
 	res, err := db.Conn.Exec(
-		"INSERT INTO entries (request_id, user_id, date, hour) VALUES (?, ?, ?, ?)",
-		requestID, userID, date, hour,
+		"INSERT INTO entries (submission_id, date, hour) VALUES (?, ?, ?)",
+		submissionID, date, hour,
 	)
 	if err != nil {
 		return -1, err
@@ -170,7 +170,7 @@ func (db *Sqlite3DB) CreateEntries(entries []Entry) ([]int, error) {
 
 	var ids []int
 	for _, entry := range entries {
-		id, err := db.createEntry(entry.RequestID, entry.UserID, entry.Date, entry.Hour)
+		id, err := db.createEntry(entry.SubmissionID, entry.Date, entry.Hour)
 		if err != nil {
 			return nil, err
 		}
@@ -181,4 +181,20 @@ func (db *Sqlite3DB) CreateEntries(entries []Entry) ([]int, error) {
 		return nil, err
 	}
 	return ids, nil
+}
+
+func (db *Sqlite3DB) CreateSubmission(submitterID int, requestID int) (int, error) {
+	res, err := db.Conn.Exec(
+		"INSERT INTO submissions (submitter_id, request_id) VALUES (?, ?)",
+		submitterID, requestID,
+	)
+	if err != nil {
+		return -1, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return int(id), nil
 }

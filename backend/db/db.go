@@ -25,11 +25,10 @@ type Request struct {
 }
 
 type Entry struct {
-	ID        int
-	RequestID int
-	UserID    int
-	Date      string
-	Hour      int
+	ID           int
+	SubmissionID int
+	Date         string
+	Hour         int
 }
 
 type Submission struct {
@@ -45,8 +44,9 @@ type DB interface {
 	GetUserByLoginID(loginID string) (User, error)
 	GetRequests() ([]Request, error)
 	GetRequestByID(id int) (Request, error)
-	GetEntriesByRequestID(requestID int) ([]Entry, error)
+	GetEntriesBySubmissionID(submissionID int) ([]Entry, error)
 	GetSubmissionsByRequestID(requestID int) ([]Submission, error)
 	CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error)
 	CreateEntries(entries []Entry) ([]int, error)
+	CreateSubmission(submitterID int, requestID int) (int, error)
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"backend/context"
 	"backend/db"
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -30,6 +31,10 @@ func mustNewDateOnly(s string) DateOnly {
 
 func assert(t *testing.T, got, want interface{}) {
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+		// JSON形式で構造体を出力するためのエンコーディング
+		gotJSON, _ := json.MarshalIndent(got, "", "  ")
+		wantJSON, _ := json.MarshalIndent(want, "", "  ")
+
+		t.Errorf("\nGOT:\n%s\n\nWANT:\n%s", gotJSON, wantJSON)
 	}
 }

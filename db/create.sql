@@ -34,13 +34,11 @@ CREATE TABLE IF NOT EXISTS requests (
 -- シフトエントリーテーブル
 CREATE TABLE IF NOT EXISTS entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    request_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    submission_id INTEGER NOT NULL,
     date TEXT NOT NULL,
     hour INTEGER NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (request_id) REFERENCES requests(id)
+    FOREIGN KEY (submission_id) REFERENCES submissions(id)
 );
 
 -- シフト提出テーブル
