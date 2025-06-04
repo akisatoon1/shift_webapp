@@ -134,9 +134,12 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 		return NewAppError(err, "提出情報の取得に失敗しました", http.StatusInternalServerError)
 	}
 
-	// 提出情報をDTOに変換
-	submissionsInfo := []dto.SubmissionInfo{}
+	// シフト提出情報をDTOに変換
+	var submissionsInfo []dto.SubmissionInfo
+	var entriesInfo []dto.EntryInfo
+
 	for _, submission := range submissions {
+		// シフト提出情報のみを処理
 		submissionInfo := dto.SubmissionInfo{
 			Submitter: dto.UserInfo{
 				ID:   submission.Submitter.ID,
@@ -144,27 +147,21 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 			},
 		}
 		submissionsInfo = append(submissionsInfo, submissionInfo)
-	}
 
-	// エントリー情報を取得
-	entries, err := model.GetEntriesByRequestID(ctx, requestIdInt)
-	if err != nil {
-		return NewAppError(err, "エントリー情報の取得に失敗しました", http.StatusInternalServerError)
-	}
-
-	// エントリー情報をDTOに変換
-	entriesInfo := []dto.EntryInfo{}
-	for _, entry := range entries {
-		entryInfo := dto.EntryInfo{
-			ID: entry.ID,
-			User: dto.UserInfo{
-				ID:   entry.User.ID,
-				Name: entry.User.Name,
-			},
-			Date: entry.Date.Format(),
-			Hour: entry.Hour,
+		// エントリー情報を処理
+		for _, entry := range submission.Entries {
+			entryInfo := dto.EntryInfo{
+				ID: entry.ID,
+				User: dto.UserInfo{
+					ID:   submission.Submitter.ID,
+					Name: submission.Submitter.Name,
+				},
+				Date: entry.Date.Format(),
+				Hour: entry.Hour,
+			}
+			entriesInfo = append(entriesInfo, entryInfo)
 		}
-		entriesInfo = append(entriesInfo, entryInfo)
+
 	}
 
 	// レスポンスDTOを作成
@@ -246,7 +243,7 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 	return nil
 }
 
-func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+func PostSubmissionsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
 	// ログインしているユーザーのIDを取得する
 	userID, isLoggedIn := auth.GetUserID(ctx, r)
 	if !isLoggedIn {
@@ -268,10 +265,10 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	}
 
 	// モデルに渡す形に変換する
-	entries := model.NewEntries{
-		RequestID: requestIdInt,
-		CreatorID: userID,
-		Entries:   []model.NewEntry{},
+	newSubmission := model.NewSubmission{
+		RequestID:   requestIdInt,
+		SubmitterID: userID,
+		NewEntries:  []model.NewEntry{},
 	}
 
 	// DTOからモデルに変換
@@ -282,14 +279,14 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 			return NewAppError(err, "日付のフォーマットが不正です", http.StatusBadRequest)
 		}
 
-		entries.Entries = append(entries.Entries, model.NewEntry{
+		newSubmission.NewEntries = append(newSubmission.NewEntries, model.NewEntry{
 			Date: dateOnly,
 			Hour: entry.Hour,
 		})
 	}
 
-	// エントリーを作成する
-	entryIDs, err := model.CreateEntries(ctx, entries)
+	// 新しい提出を作成
+	submissionID, err := model.CreateSubmission(ctx, newSubmission)
 	if err != nil {
 		if errors.Is(err, model.ErrForbidden) {
 			return NewAppError(err, "権限がありません", http.StatusForbidden)
@@ -304,15 +301,9 @@ func PostEntriesRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 	}
 
 	// レスポンスDTOを作成
-	entriesResponse := make([]dto.EntryIDInfo, len(entryIDs))
-	for i, id := range entryIDs {
-		entriesResponse[i] = dto.EntryIDInfo{ID: id}
-	}
-
-	response := dto.CreateEntriesResponse{
-		ID:      requestIdInt,
-		Entries: entriesResponse,
-	}
+	response := struct {
+		ID int `json:"id"`
+	}{submissionID}
 
 	// レスポンスを返す
 	w.WriteHeader(http.StatusCreated)

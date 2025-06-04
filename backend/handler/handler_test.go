@@ -135,8 +135,8 @@ func TestGetRequestHandler(t *testing.T) {
 			{ID: 3, LoginID: "test_user3", Password: string(hashedPassword), Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 		},
 		[]db.Entry{
-			{ID: 1, RequestID: 1, UserID: 1, Date: "2024-06-01", Hour: 8},
-			{ID: 2, RequestID: 1, UserID: 2, Date: "2024-06-01", Hour: 8},
+			{ID: 1, SubmissionID: 1, Date: "2024-06-01", Hour: 8},
+			{ID: 2, SubmissionID: 2, Date: "2024-06-01", Hour: 8},
 		},
 		[]db.Submission{
 			{ID: 1, RequestID: 1, SubmitterID: 1, CreatedAt: "2024-06-01 00:00:00", UpdatedAt: "2024-06-01 00:00:00"},
@@ -228,7 +228,7 @@ func TestPostRequestsHandler(t *testing.T) {
 	AssertRes(t, w.Body.Bytes(), wantJSON)
 }
 
-func TestPostEntriesHandler(t *testing.T) {
+func TestPostSubmissionsHandler(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	appCtx := newTestContext(
 		[]db.Request{
@@ -241,7 +241,7 @@ func TestPostEntriesHandler(t *testing.T) {
 		[]db.Entry{},
 		[]db.Submission{},
 	)
-	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/entries", PostEntriesRequest)
+	mux := setHandlerToEndpoint(appCtx, "POST /requests/{id}/submissions", PostSubmissionsRequest)
 
 	// ログイン用のCookieを取得
 	cookies := getLoginCookies(appCtx, "test_user", "password")
@@ -259,7 +259,7 @@ func TestPostEntriesHandler(t *testing.T) {
 
 	body, _ := json.Marshal(requestBody)
 
-	req := httptest.NewRequest("POST", "/requests/1/entries", bytes.NewBuffer(body))
+	req := httptest.NewRequest("POST", "/requests/1/submissions", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	addCookiesToRequest(req, cookies)
 	w := httptest.NewRecorder()
@@ -269,8 +269,7 @@ func TestPostEntriesHandler(t *testing.T) {
 
 	wantJSON := `
 	{
-		"id": 1,
-		"entries": [{"id": 1}, {"id": 2}]
+		"id": 1
 	}
 	`
 	AssertRes(t, w.Body.Bytes(), wantJSON)

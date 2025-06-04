@@ -67,7 +67,7 @@ export default function EntrySubmitPage() {
                 Array.from(hours).map(hour => ({ date, hour }))
             );
         try {
-            const res = await post(`/requests/${requestId}/entries`, submitEntries);
+            const res = await post(`/requests/${requestId}/submissions`, submitEntries);
             if (res && res.ok) {
                 setSuccess(true);
                 setSelected({});

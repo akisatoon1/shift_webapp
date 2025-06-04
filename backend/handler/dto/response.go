@@ -26,9 +26,3 @@ type RequestDetailResponse struct {
 	Submissions []SubmissionInfo `json:"submissions"`
 	Entries     []EntryInfo      `json:"entries"`
 }
-
-// CreateEntriesResponse はエントリー作成レスポンスの構造体です
-type CreateEntriesResponse struct {
-	ID      int           `json:"id"`
-	Entries []EntryIDInfo `json:"entries"`
-}

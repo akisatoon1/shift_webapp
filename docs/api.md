@@ -126,7 +126,7 @@
 }
 ```
 
-### POST /requests/{request_id}/entries
+### POST /requests/{request_id}/submissions
 **新しいシフトエントリーを提出(追加)して、新しいIDを返す**
 #### Request body
 ```
@@ -138,9 +138,6 @@
 #### Response body
 ```
 {
-    "id": number,
-    "entries": {
-        "id": number
-    }[]
+    "id": number // 提出id
 }
 ```
