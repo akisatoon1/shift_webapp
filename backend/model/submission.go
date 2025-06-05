@@ -73,11 +73,11 @@ type NewSubmission struct {
 
 func CreateSubmission(ctx *context.AppContext, newSubmission NewSubmission) (int, error) {
 	// 提出者が従業員であるか確認する
-	isUserEmployee, err := auth.IsEmployee(ctx, newSubmission.SubmitterID)
+	user, err := GetUserByID(ctx, newSubmission.SubmitterID)
 	if err != nil {
 		return 0, err
 	}
-	if !isUserEmployee {
+	if user.Role != auth.RoleEmployee {
 		return 0, ErrForbidden
 	}
 
@@ -85,6 +85,15 @@ func CreateSubmission(ctx *context.AppContext, newSubmission NewSubmission) (int
 	request, err := GetRequestByID(ctx, newSubmission.RequestID)
 	if err != nil {
 		return 0, err
+	}
+
+	// 提出済みの場合はエラー
+	alreadySubmitted, err := ctx.GetDB().AlreadySubmitted(newSubmission.RequestID, newSubmission.SubmitterID)
+	if err != nil {
+		return 0, err
+	}
+	if alreadySubmitted {
+		return 0, errors.New("already submitted")
 	}
 
 	// エントリーのvalidation
@@ -107,7 +116,7 @@ func CreateSubmission(ctx *context.AppContext, newSubmission NewSubmission) (int
 	}
 
 	// DBに提出を作成
-	submissionID, err := ctx.GetDB().CreateSubmission(newSubmission.RequestID, newSubmission.SubmitterID)
+	submissionID, err := ctx.GetDB().CreateSubmission(newSubmission.SubmitterID, newSubmission.RequestID)
 	if err != nil {
 		return 0, err
 	}

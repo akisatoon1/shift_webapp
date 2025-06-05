@@ -2,6 +2,7 @@ package model
 
 import (
 	"backend/auth"
+	"backend/context"
 	"backend/db"
 	"testing"
 )
@@ -79,8 +80,9 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 	assert(t, submissions, want)
 }
 
-func TestCreateSubmission(t *testing.T) {
-	ctx := newTestContext(
+// テスト用のコンテキスト生成関数
+func createSubmissionTestContext() *context.AppContext {
+	return newTestContext(
 		[]db.User{
 			{ID: 1, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
 			{ID: 2, LoginID: "test_employee", Password: "password", Name: "テスト従業員", Role: auth.RoleEmployee, CreatedAt: "2023-01-01 00:00:00"},
@@ -93,8 +95,12 @@ func TestCreateSubmission(t *testing.T) {
 		[]db.Entry{},
 		[]db.Submission{},
 	)
+}
 
-	// 正常系: 有効なリクエストに対して従業員が提出する
+// TestCreateSubmission1 正常系: 有効なリクエストに対して従業員が提出する
+func TestCreateSubmission1(t *testing.T) {
+	ctx := createSubmissionTestContext()
+
 	submissionID, err := CreateSubmission(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
@@ -109,9 +115,13 @@ func TestCreateSubmission(t *testing.T) {
 	if submissionID != 1 {
 		t.Errorf("Expected valid submission ID, got %d", submissionID)
 	}
+}
 
-	// 異常系: 存在しないリクエストID
-	_, err = CreateSubmission(ctx, NewSubmission{
+// TestCreateSubmission2 異常系: 存在しないリクエストID
+func TestCreateSubmission2(t *testing.T) {
+	ctx := createSubmissionTestContext()
+
+	_, err := CreateSubmission(ctx, NewSubmission{
 		RequestID:   9999,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -121,9 +131,13 @@ func TestCreateSubmission(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error for non-existent request ID, got nil")
 	}
+}
 
-	// 異常系: 従業員でないユーザーが提出しようとする
-	_, err = CreateSubmission(ctx, NewSubmission{
+// TestCreateSubmission3 異常系: 従業員でないユーザーが提出しようとする
+func TestCreateSubmission3(t *testing.T) {
+	ctx := createSubmissionTestContext()
+
+	_, err := CreateSubmission(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 3, // manager
 		NewEntries: []NewEntry{
@@ -133,9 +147,42 @@ func TestCreateSubmission(t *testing.T) {
 	if err != ErrForbidden {
 		t.Errorf("Expected ErrForbidden for non-employee user, got %v", err)
 	}
+}
 
-	// 異常系: リクエスト期間外の日付
+// TestCreateSubmission4 異常系: すでに提出済みのリクエストに再度提出しようとする
+func TestCreateSubmission4(t *testing.T) {
+	ctx := createSubmissionTestContext()
+
+	// 最初の提出
+	_, err := CreateSubmission(ctx, NewSubmission{
+		RequestID:   1,
+		SubmitterID: 2,
+		NewEntries: []NewEntry{
+			{Date: mustNewDateOnly("2024-06-01"), Hour: 9},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Unexpected error on first submission: %v", err)
+	}
+
+	// 二回目の提出（エラーになるはず）
 	_, err = CreateSubmission(ctx, NewSubmission{
+		RequestID:   1,
+		SubmitterID: 2,
+		NewEntries: []NewEntry{
+			{Date: mustNewDateOnly("2024-06-01"), Hour: 10},
+		},
+	})
+	if err == nil {
+		t.Errorf("Expected error for already submitted request, got nil")
+	}
+}
+
+// TestCreateSubmission5 異常系: リクエスト期間外の日付
+func TestCreateSubmission5(t *testing.T) {
+	ctx := createSubmissionTestContext()
+
+	_, err := CreateSubmission(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -145,9 +192,13 @@ func TestCreateSubmission(t *testing.T) {
 	if _, ok := err.(InputError); !ok {
 		t.Errorf("Expected InputError for date outside request range, got %v", err)
 	}
+}
 
-	// 異常系: 無効な時間
-	_, err = CreateSubmission(ctx, NewSubmission{
+// TestCreateSubmission6 異常系: 無効な時間
+func TestCreateSubmission6(t *testing.T) {
+	ctx := createSubmissionTestContext()
+
+	_, err := CreateSubmission(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{

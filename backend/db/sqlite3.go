@@ -126,6 +126,16 @@ func (db *Sqlite3DB) GetSubmissionsByRequestID(requestID int) ([]Submission, err
 	return submissions, nil
 }
 
+func (db *Sqlite3DB) AlreadySubmitted(requestID int, submitterID int) (bool, error) {
+	var count int
+	row := db.Conn.QueryRow("SELECT COUNT(*) FROM submissions WHERE request_id = ? AND submitter_id = ?", requestID, submitterID)
+	err := row.Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 // 新しいシフトリクエストを作成
 func (db *Sqlite3DB) CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error) {
 	res, err := db.Conn.Exec(

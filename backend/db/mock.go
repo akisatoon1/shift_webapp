@@ -64,6 +64,15 @@ func (m *mockDB) GetSubmissionsByRequestID(requestID int) ([]Submission, error) 
 	return submissions, nil
 }
 
+func (m *mockDB) AlreadySubmitted(requestID int, submitterID int) (bool, error) {
+	for _, submission := range m.Submissions {
+		if submission.RequestID == requestID && submission.SubmitterID == submitterID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (m *mockDB) CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error) {
 	m.Requests = append(m.Requests, Request{ID: len(m.Requests) + 1, CreatorID: creatorID, StartDate: startDate, EndDate: endDate, Deadline: deadline, CreatedAt: time.Now().Format(time.DateTime)})
 	return len(m.Requests), nil
