@@ -2,6 +2,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { post } from "../lib/api";
+import { Button } from "../components/ui";
+
+// TODO: ログイン失敗時の挙動おかしい
 
 export default function LoginPage() {
     const [loginId, setLoginId] = useState("");
@@ -42,9 +45,9 @@ export default function LoginPage() {
                         <span className="text-sm">ログインID</span>
                         <input
                             type="text"
-                            className="border rounded px-3 py-2"
+                            className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={loginId}
-                            onChange={e => setLoginId(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLoginId(e.target.value)}
                             autoComplete="username"
                             required
                             disabled={loading}
@@ -54,9 +57,9 @@ export default function LoginPage() {
                         <span className="text-sm">パスワード</span>
                         <input
                             type="password"
-                            className="border rounded px-3 py-2"
+                            className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={password}
-                            onChange={e => setPassword(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                             autoComplete="current-password"
                             required
                             disabled={loading}
@@ -65,13 +68,13 @@ export default function LoginPage() {
                     {error && (
                         <div className="text-red-600 text-sm text-center">{error}</div>
                     )}
-                    <button
+                    <Button
                         type="submit"
-                        className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50"
                         disabled={loading}
+                        fullWidth={true}
                     >
                         {loading ? "ログイン中..." : "ログイン"}
-                    </button>
+                    </Button>
                 </form>
             </div>
         </div>

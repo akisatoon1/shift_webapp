@@ -1,39 +1,19 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { get, del } from "./lib/api";
+import { useSession } from "./hooks";
+import { Button } from "./components/ui";
+import { del } from "./lib/api";
+
+// TODO: headerの名前残る
 
 export default function Header() {
     const router = useRouter();
     const pathname = usePathname();
-    const [userName, setUserName] = useState<string>("");
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const { user, isLoading } = useSession();
 
-    useEffect(() => {
-        // ログインページでない場合のみユーザー情報を取得
-        if (pathname !== "/login") {
-            fetchUserInfo();
-        }
-    }, [pathname]);
-
-    const fetchUserInfo = async () => {
-        setIsLoading(true);
-        try {
-            const response = await get(`/session`);
-
-            // ログインページへのリダイレクトは get() で自動的に処理される
-            if (response && response.ok) {
-                const data = await response.json();
-                setUserName(data.user.name);
-            } else if (response) {
-                console.error("Failed to fetch user info");
-            }
-        } catch (error) {
-            console.error("Error fetching user info:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // ログインページでない場合のみ表示
+    const showUserInfo = pathname !== "/login";
 
     const handleLogout = async () => {
         const api_base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -44,17 +24,18 @@ export default function Header() {
     return (
         <header className="w-full flex items-center justify-between px-6 py-4 bg-blue-600 text-white shadow">
             <div className="text-lg font-bold">Shift WebApp</div>
-            {pathname !== "/login" && (
+            {showUserInfo && (
                 <div className="flex items-center gap-4">
-                    {!isLoading && userName && (
-                        <div className="text-sm font-medium">{userName}さん</div>
+                    {!isLoading && user && (
+                        <div className="text-sm font-medium">{user.name}さん</div>
                     )}
-                    <button
+                    <Button
                         onClick={handleLogout}
-                        className="bg-white text-blue-600 px-4 py-2 rounded font-semibold hover:bg-blue-100 transition"
+                        variant="outline"
+                        className="bg-white text-blue-600 hover:bg-blue-100 transition"
                     >
                         ログアウト
-                    </button>
+                    </Button>
                 </div>
             )}
         </header>
