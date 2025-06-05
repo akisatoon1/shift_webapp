@@ -16,8 +16,10 @@ func TestGetUserByID(t *testing.T) {
 		[]db.Submission{},
 	)
 
+	var u User
+
 	// 正常系
-	got, err := GetUserByID(ctx, 1)
+	got, err := u.FindByID(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -34,7 +36,7 @@ func TestGetUserByID(t *testing.T) {
 	assert(t, got, want)
 
 	// 異常系
-	_, err = GetUserByID(ctx, 999)
+	_, err = u.FindByID(ctx, 999)
 	if err == nil {
 		t.Fatalf("expected error")
 	}

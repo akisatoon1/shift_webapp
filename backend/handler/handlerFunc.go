@@ -41,7 +41,8 @@ func GetSessionRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 	}
 
 	// ユーザー情報を取得
-	user, err := model.GetUserByID(ctx, userID)
+	var usr model.User
+	user, err := usr.FindByID(ctx, userID)
 	if err != nil {
 		return NewAppError(err, "セッションの取得に失敗しました", http.StatusInternalServerError)
 	}
@@ -83,7 +84,8 @@ func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
-	requests, err := model.GetRequests(ctx)
+	var req model.Request
+	requests, err := req.FindAll(ctx)
 	if err != nil {
 		return NewAppError(err, "シフトリクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
@@ -122,14 +124,16 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 	}
 
 	// リクエスト情報を取得
-	request, err := model.GetRequestByID(ctx, requestIdInt)
+	var req model.Request
+	request, err := req.FindByID(ctx, requestIdInt)
 	if err != nil {
 		// TODO: errcode修正
 		return NewAppError(err, "リクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
 
 	// 提出情報を取得
-	submissions, err := model.GetSubmissionsByRequestID(ctx, requestIdInt)
+	var sub model.Submission
+	submissions, err := sub.FindByRequestID(ctx, requestIdInt)
 	if err != nil {
 		return NewAppError(err, "提出情報の取得に失敗しました", http.StatusInternalServerError)
 	}
@@ -214,7 +218,8 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 	}
 
 	// 新しいシフトリクエストを作成する
-	requestID, err := model.CreateRequest(ctx, model.NewRequest{
+	var req model.Request
+	requestID, err := req.Create(ctx, model.NewRequest{
 		CreatorID: userID,
 		StartDate: startDate,
 		EndDate:   endDate,
@@ -286,7 +291,8 @@ func PostSubmissionsRequest(ctx *context.AppContext, w http.ResponseWriter, r *h
 	}
 
 	// 新しい提出を作成
-	submissionID, err := model.CreateSubmission(ctx, newSubmission)
+	var sub model.Submission
+	submissionID, err := sub.Create(ctx, newSubmission)
 	if err != nil {
 		if errors.Is(err, model.ErrForbidden) {
 			return NewAppError(err, "権限がありません", http.StatusForbidden)

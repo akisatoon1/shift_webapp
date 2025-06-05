@@ -27,14 +27,16 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 		},
 	)
 
+	var s Submission
+
 	// シフトリクエストIDが存在しない場合のテスト
-	_, err := GetSubmissionsByRequestID(ctx, 123)
+	_, err := s.FindByRequestID(ctx, 123)
 	if err == nil {
 		t.Errorf("Expected error for non-existent request ID, got nil")
 	}
 
 	// シフトリクエストIDが存在する場合のテスト
-	submissions, err := GetSubmissionsByRequestID(ctx, 1)
+	submissions, err := s.FindByRequestID(ctx, 1)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -101,7 +103,8 @@ func createSubmissionTestContext() *context.AppContext {
 func TestCreateSubmission1(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	submissionID, err := CreateSubmission(ctx, NewSubmission{
+	var s Submission
+	submissionID, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -121,7 +124,8 @@ func TestCreateSubmission1(t *testing.T) {
 func TestCreateSubmission2(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	_, err := CreateSubmission(ctx, NewSubmission{
+	var s Submission
+	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   9999,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -137,7 +141,8 @@ func TestCreateSubmission2(t *testing.T) {
 func TestCreateSubmission3(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	_, err := CreateSubmission(ctx, NewSubmission{
+	var s Submission
+	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 3, // manager
 		NewEntries: []NewEntry{
@@ -153,8 +158,10 @@ func TestCreateSubmission3(t *testing.T) {
 func TestCreateSubmission4(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
+	var s Submission
+
 	// 最初の提出
-	_, err := CreateSubmission(ctx, NewSubmission{
+	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -166,7 +173,7 @@ func TestCreateSubmission4(t *testing.T) {
 	}
 
 	// 二回目の提出（エラーになるはず）
-	_, err = CreateSubmission(ctx, NewSubmission{
+	_, err = s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -182,7 +189,8 @@ func TestCreateSubmission4(t *testing.T) {
 func TestCreateSubmission5(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	_, err := CreateSubmission(ctx, NewSubmission{
+	var s Submission
+	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{
@@ -198,7 +206,8 @@ func TestCreateSubmission5(t *testing.T) {
 func TestCreateSubmission6(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	_, err := CreateSubmission(ctx, NewSubmission{
+	var s Submission
+	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
 		NewEntries: []NewEntry{

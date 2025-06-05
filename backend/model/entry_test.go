@@ -23,7 +23,8 @@ func TestGetEntriesBySubmissionID(t *testing.T) {
 			{ID: 1, RequestID: 1, SubmitterID: 1, CreatedAt: "2024-06-01 00:00:00", UpdatedAt: "2024-06-01 00:00:00"},
 		},
 	)
-	got, err := getEntriesBySubmissionID(ctx, 1)
+	var e entry
+	got, err := e.findBySubmissionID(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -48,8 +49,10 @@ func TestCreateEntries(t *testing.T) {
 		[]db.Submission{},
 	)
 
+	var e entry
+
 	// 正常系
-	got, err := createEntries(ctx, 1, []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}, {Date: mustNewDateOnly("2024-06-01"), Hour: 9}})
+	got, err := e.create(ctx, 1, []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}, {Date: mustNewDateOnly("2024-06-01"), Hour: 9}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

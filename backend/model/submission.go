@@ -16,9 +16,10 @@ type Submission struct {
 	UpdatedAt   DateTime
 }
 
-func GetSubmissionsByRequestID(ctx *context.AppContext, requestID int) ([]Submission, error) {
+func (*Submission) FindByRequestID(ctx *context.AppContext, requestID int) ([]Submission, error) {
 	// シフトリクエストIDが存在するかチェック
-	_, err := GetRequestByID(ctx, requestID)
+	var request Request
+	_, err := request.FindByID(ctx, requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,12 +42,15 @@ func GetSubmissionsByRequestID(ctx *context.AppContext, requestID int) ([]Submis
 			return nil, err
 		}
 
-		user, err := GetUserByID(ctx, submissionRec.SubmitterID)
+		var user User
+		user, err = user.FindByID(ctx, submissionRec.SubmitterID)
 		if err != nil {
 			return nil, err
 		}
 
-		entries, err := getEntriesBySubmissionID(ctx, submissionRec.ID)
+		// entryは内部構造体なのでそのまま関数を使用
+		var e entry
+		entries, err := e.findBySubmissionID(ctx, submissionRec.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -71,18 +75,20 @@ type NewSubmission struct {
 	NewEntries  []NewEntry
 }
 
-func CreateSubmission(ctx *context.AppContext, newSubmission NewSubmission) (int, error) {
+func (*Submission) Create(ctx *context.AppContext, newSubmission NewSubmission) (int, error) {
 	// 提出者が従業員であるか確認する
-	user, err := GetUserByID(ctx, newSubmission.SubmitterID)
+	var user User
+	foundUser, err := user.FindByID(ctx, newSubmission.SubmitterID)
 	if err != nil {
 		return 0, err
 	}
-	if user.Role != auth.RoleEmployee {
+	if foundUser.Role != auth.RoleEmployee {
 		return 0, ErrForbidden
 	}
 
 	// シフトリクエストIDが存在するか確認する
-	request, err := GetRequestByID(ctx, newSubmission.RequestID)
+	var request Request
+	foundRequest, err := request.FindByID(ctx, newSubmission.RequestID)
 	if err != nil {
 		return 0, err
 	}
@@ -99,7 +105,7 @@ func CreateSubmission(ctx *context.AppContext, newSubmission NewSubmission) (int
 	// エントリーのvalidation
 	for _, entry := range newSubmission.NewEntries {
 		// 日付のvalidation
-		if !isBeforeOrEqual(request.StartDate, entry.Date) || !isBeforeOrEqual(entry.Date, request.EndDate) {
+		if !isBeforeOrEqual(foundRequest.StartDate, entry.Date) || !isBeforeOrEqual(entry.Date, foundRequest.EndDate) {
 			return 0, NewInputError(
 				errors.New("date must be within request range"),
 				"日付はリクエストの範囲内でなければいけない",
@@ -122,7 +128,8 @@ func CreateSubmission(ctx *context.AppContext, newSubmission NewSubmission) (int
 	}
 
 	// エントリーを作成
-	_, err = createEntries(ctx, submissionID, newSubmission.NewEntries)
+	var e entry
+	_, err = e.create(ctx, submissionID, newSubmission.NewEntries)
 	if err != nil {
 		return 0, err
 	}

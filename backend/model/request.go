@@ -16,7 +16,7 @@ type Request struct {
 	CreatedAt DateTime
 }
 
-func GetRequestByID(ctx *context.AppContext, requestID int) (Request, error) {
+func (*Request) FindByID(ctx *context.AppContext, requestID int) (Request, error) {
 	// シフトリクエストを取得
 	requestRec, err := ctx.GetDB().GetRequestByID(requestID)
 	if err != nil {
@@ -56,7 +56,7 @@ func GetRequestByID(ctx *context.AppContext, requestID int) (Request, error) {
 	}, nil
 }
 
-func GetRequests(ctx *context.AppContext) ([]Request, error) {
+func (*Request) FindAll(ctx *context.AppContext) ([]Request, error) {
 	// すべてのシフトリクエストを取得
 	requestRecs, err := ctx.GetDB().GetRequests()
 	if err != nil {
@@ -65,37 +65,12 @@ func GetRequests(ctx *context.AppContext) ([]Request, error) {
 
 	var requests []Request
 	for _, rec := range requestRecs {
-		// それぞれのシフトリクエストに対し、
-		// 作成者ユーザーを取得
-		user, err := GetUserByID(ctx, rec.CreatorID)
+		var request Request
+		foundRequest, err := request.FindByID(ctx, rec.ID)
 		if err != nil {
 			return nil, err
 		}
-
-		// 日付を適切な型に変換
-		startDate, err := NewDateOnly(rec.StartDate)
-		endDate, err := NewDateOnly(rec.EndDate)
-		deadline, err := NewDateTime(rec.Deadline)
-		reqCreatedAt, err := NewDateTime(rec.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		requests = append(requests, Request{
-			ID: rec.ID,
-			Creator: User{
-				ID:        user.ID,
-				LoginID:   user.LoginID,
-				Password:  user.Password,
-				Name:      user.Name,
-				Role:      user.Role,
-				CreatedAt: user.CreatedAt,
-			},
-			StartDate: startDate,
-			EndDate:   endDate,
-			Deadline:  deadline,
-			CreatedAt: reqCreatedAt,
-		})
+		requests = append(requests, foundRequest)
 	}
 
 	return requests, nil
@@ -109,8 +84,8 @@ type NewRequest struct {
 	Deadline  DateTime
 }
 
-func CreateRequest(ctx *context.AppContext, newRequest NewRequest) (int, error) {
-	// 作成するユーザーが従業員であるか確認する
+func (*Request) Create(ctx *context.AppContext, newRequest NewRequest) (int, error) {
+	// 作成するユーザーがマネージャーであるか確認する
 	isUserManager, err := auth.IsManager(ctx, newRequest.CreatorID)
 	if err != nil {
 		return -1, err

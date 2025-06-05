@@ -11,7 +11,7 @@ type User struct {
 	CreatedAt DateTime
 }
 
-func GetUserByID(ctx *context.AppContext, userID int) (User, error) {
+func (*User) FindByID(ctx *context.AppContext, userID int) (User, error) {
 	// ユーザーIDが見つからない時はエラーを返す
 	userRec, err := ctx.GetDB().GetUserByID(userID)
 	if err != nil {

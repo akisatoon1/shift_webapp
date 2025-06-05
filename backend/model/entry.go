@@ -12,7 +12,7 @@ type entry struct {
 	Hour         int
 }
 
-func getEntriesBySubmissionID(ctx *context.AppContext, submissionID int) ([]entry, error) {
+func (*entry) findBySubmissionID(ctx *context.AppContext, submissionID int) ([]entry, error) {
 	// DBからエントリー一覧を取得
 	entryRecs, err := ctx.GetDB().GetEntriesBySubmissionID(submissionID)
 	if err != nil {
@@ -45,7 +45,7 @@ type NewEntry struct {
 }
 
 // エントリーを作成する
-func createEntries(ctx *context.AppContext, submissionID int, newEntries []NewEntry) ([]int, error) {
+func (*entry) create(ctx *context.AppContext, submissionID int, newEntries []NewEntry) ([]int, error) {
 	var entryRecs []db.Entry
 
 	for _, newEntry := range newEntries {

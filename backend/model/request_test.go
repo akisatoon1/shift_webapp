@@ -18,8 +18,10 @@ func TestGetRequestByID(t *testing.T) {
 		[]db.Submission{},
 	)
 
+	var r Request
+
 	// 正常系
-	got, err := GetRequestByID(ctx, 1)
+	got, err := r.FindByID(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -36,7 +38,7 @@ func TestGetRequestByID(t *testing.T) {
 	assert(t, got, want)
 
 	// 異常系
-	_, err = GetRequestByID(ctx, 999)
+	_, err = r.FindByID(ctx, 999)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -55,7 +57,8 @@ func TestGetRequests(t *testing.T) {
 		[]db.Submission{},
 	)
 
-	got, err := GetRequests(ctx)
+	var r Request
+	got, err := r.FindAll(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -79,8 +82,10 @@ func TestCreateRequest(t *testing.T) {
 		[]db.Submission{},
 	)
 
+	var r Request
+
 	// 正常系
-	got, err := CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	got, err := r.Create(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -91,25 +96,25 @@ func TestCreateRequest(t *testing.T) {
 	// 異常系
 
 	// 作成者が存在しない場合
-	_, err = CreateRequest(ctx, NewRequest{CreatorID: 999, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	_, err = r.Create(ctx, NewRequest{CreatorID: 999, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 
 	// 作成者がマネージャーでない場合
-	_, err = CreateRequest(ctx, NewRequest{CreatorID: 1, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	_, err = r.Create(ctx, NewRequest{CreatorID: 1, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 
 	// 開始日が終了日より後の場合
-	_, err = CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-02"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
+	_, err = r.Create(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-02"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 
 	// 締切日が開始日より後の場合
-	_, err = CreateRequest(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-02 00:00:00")})
+	_, err = r.Create(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-02 00:00:00")})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
