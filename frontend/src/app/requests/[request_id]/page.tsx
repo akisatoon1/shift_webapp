@@ -14,6 +14,13 @@ type Entry = {
     hour: number;
 };
 
+type Submission = {
+    submitter: {
+        id: number;
+        name: string;
+    };
+};
+
 type RequestDetail = {
     id: number;
     creator: {
@@ -24,6 +31,7 @@ type RequestDetail = {
     end_date: string;
     deadline: string;
     created_at: string;
+    submissions: Submission[];
     entries: Entry[];
 };
 
@@ -97,6 +105,7 @@ export default function RequestDetailPage() {
             d = d.add(1, "day");
         }
     }
+    
     // ユーザーごとにentriesをグループ化
     const userEntriesMap: { [userId: number]: { user: Entry["user"]; entries: Entry[] } } = {};
     if (requestDetail && Array.isArray(requestDetail.entries)) {
@@ -107,6 +116,38 @@ export default function RequestDetailPage() {
             userEntriesMap[entry.user.id].entries.push(entry);
         });
     }
+
+    // 提出者（submitters）の一覧を作成
+    const submitterMap: { [submitterId: number]: { submitter: Submission["submitter"]; entries: Entry[] } } = {};
+    if (requestDetail) {
+        // すべての提出者を追加
+        if (Array.isArray(requestDetail.submissions)) {
+            requestDetail.submissions.forEach((submission) => {
+                if (!submitterMap[submission.submitter.id]) {
+                    submitterMap[submission.submitter.id] = {
+                        submitter: submission.submitter,
+                        entries: []
+                    };
+                }
+            });
+        }
+        
+        // 各提出者のエントリーを追加
+        if (Array.isArray(requestDetail.entries)) {
+            requestDetail.entries.forEach((entry) => {
+                if (submitterMap[entry.user.id]) {
+                    submitterMap[entry.user.id].entries.push(entry);
+                } else {
+                    // エントリーがあるのに提出者リストにない場合（通常はないはず）
+                    submitterMap[entry.user.id] = {
+                        submitter: { id: entry.user.id, name: entry.user.name },
+                        entries: [entry]
+                    };
+                }
+            });
+        }
+    }
+    
     // 0-23時のリスト
     const hourList = Array.from({ length: 24 }, (_, i) => i);
 
@@ -171,13 +212,13 @@ export default function RequestDetailPage() {
                 ) : (
                     <div>
                         {viewMode === 'user' ? (
-                            // --- 既存のユーザーごと表示 ---
-                            Object.values(userEntriesMap).length === 0 ? (
-                                <div className="text-center text-gray-500">エントリーがありません</div>
+                            // --- 提出者ごと表示 ---
+                            Object.values(submitterMap).length === 0 ? (
+                                <div className="text-center text-gray-500">提出者がありません</div>
                             ) : (
-                                Object.values(userEntriesMap).map(({ user, entries }) => (
-                                    <div key={user.id} className="mb-8">
-                                        <div className="font-bold mb-2 text-lg">{user.name} さんのエントリー</div>
+                                Object.values(submitterMap).map(({ submitter, entries }) => (
+                                    <div key={submitter.id} className="mb-8">
+                                        <div className="font-bold mb-2 text-lg">{submitter.name} さんのエントリー</div>
                                         <div className="overflow-x-auto">
                                             <table className="border mb-4 min-w-max">
                                                 <thead>
@@ -221,13 +262,13 @@ export default function RequestDetailPage() {
                                 ))
                             )
                         ) : (
-                            // --- 新しい日付ごとに表を分ける表示 ---
+                            // --- 日付ごとに表を分ける表示 ---
                             dateList.length === 0 ? (
                                 <div className="text-center text-gray-500">エントリーがありません</div>
                             ) : (
                                 dateList.map(date => {
-                                    // その日付にエントリーしているユーザー一覧
-                                    const users = Object.values(userEntriesMap).map(({ user }) => user);
+                                    // 提出者一覧
+                                    const submitters = Object.values(submitterMap).map(({ submitter }) => submitter);
                                     return (
                                         <div key={date} className="mb-8">
                                             <div className="font-bold mb-2 text-lg">{date} のエントリー</div>
@@ -235,7 +276,7 @@ export default function RequestDetailPage() {
                                                 <table className="border mb-4 min-w-max">
                                                     <thead>
                                                         <tr className="bg-gray-100">
-                                                            <th className="border px-2 py-1 w-28">ユーザー名</th>
+                                                            <th className="border px-2 py-1 w-28">提出者</th>
                                                             {hourList.map(hour => (
                                                                 <th
                                                                     key={hour}
@@ -248,12 +289,12 @@ export default function RequestDetailPage() {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {users.map(user => {
-                                                            // そのユーザーのその日付のエントリー
-                                                            const entries = requestDetail?.entries.filter(e => e.user.id === user.id && e.date === date) || [];
+                                                        {submitters.map(submitter => {
+                                                            // その提出者のその日付のエントリー
+                                                            const entries = requestDetail?.entries.filter(e => e.user.id === submitter.id && e.date === date) || [];
                                                             return (
-                                                                <tr key={user.id}>
-                                                                    <td className="border px-2 py-1 text-center text-xs">{user.name}</td>
+                                                                <tr key={submitter.id}>
+                                                                    <td className="border px-2 py-1 text-center text-xs">{submitter.name}</td>
                                                                     {hourList.map(hour => {
                                                                         const hasEntry = entries.some(e => e.hour === hour);
                                                                         return (
