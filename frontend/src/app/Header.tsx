@@ -10,10 +10,14 @@ import { del } from "./lib/api";
 export default function Header() {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, isLoading } = useSession();
+
+    // ログインページでない場合のみuseSessionを呼び出す
+    const isLoginPage = pathname === "/login";
+    const sessionData = !isLoginPage ? useSession() : { user: null, isLoading: false };
+    const { user, isLoading } = sessionData;
 
     // ログインページでない場合のみ表示
-    const showUserInfo = pathname !== "/login";
+    const showUserInfo = !isLoginPage;
 
     const handleLogout = async () => {
         const api_base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
