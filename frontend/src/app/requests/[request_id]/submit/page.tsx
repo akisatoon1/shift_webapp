@@ -1,11 +1,30 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
-import { post } from "../../../lib/api";
+import { post, get } from "../../../lib/api";
 
-// TODO: 未提出と選択0の提出済みの区別
-// TODO: 更新や削除はどうする？
+// TODO: シフト提出更新
+
+// 既存の提出データの型定義
+type SubmissionEntry = {
+    id: number;
+    date: string;
+    hour: number;
+};
+
+type Submission = {
+    id: number;
+    user: {
+        id: number;
+        name: string;
+    };
+    entries: SubmissionEntry[];
+};
+
+type SubmissionResponse = {
+    submission: Submission | null;
+};
 
 export default function EntrySubmitPage() {
     const params = useParams();
@@ -17,6 +36,9 @@ export default function EntrySubmitPage() {
     const [submitError, setSubmitError] = useState("");
     const [submitLoading, setSubmitLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    // 提出済みデータ
+    const [existingSubmission, setExistingSubmission] = useState<Submission | null>(null);
+    const [loadingSubmission, setLoadingSubmission] = useState(true);
     // カレンダー用: 今月の日付リストを生成
     const today = dayjs();
     const year = today.year();
@@ -43,6 +65,40 @@ export default function EntrySubmitPage() {
 
     // start_date, end_dateがない場合のエラー表示
     const paramError = !startDate || !endDate;
+
+    // 既存の提出データを取得
+    useEffect(() => {
+        if (!requestId) return;
+
+        async function fetchSubmission() {
+            setLoadingSubmission(true);
+            try {
+                const res = await get(`/requests/${requestId}/submissions/mine`);
+                if (res && res.ok) {
+                    const data: SubmissionResponse = await res.json();
+                    setExistingSubmission(data.submission);
+
+                    // 提出データが存在する場合、そのデータで選択状態を初期化
+                    if (data.submission) {
+                        const newSelected: { [date: string]: Set<number> } = {};
+                        data.submission.entries.forEach(entry => {
+                            if (!newSelected[entry.date]) {
+                                newSelected[entry.date] = new Set<number>();
+                            }
+                            newSelected[entry.date].add(entry.hour);
+                        });
+                        setSelected(newSelected);
+                    }
+                }
+            } catch (e) {
+                console.error("提出データの取得に失敗しました:", e);
+            } finally {
+                setLoadingSubmission(false);
+            }
+        }
+
+        fetchSubmission();
+    }, [requestId]);
 
     const handleCellClick = (date: string, hour: number) => {
         setSelected(prev => {
@@ -99,9 +155,18 @@ export default function EntrySubmitPage() {
                 </div>
                 {paramError ? (
                     <div className="text-red-600 text-center text-sm mb-2">日付範囲が指定されていません（start_date, end_dateパラメータ必須）</div>
+                ) : loadingSubmission ? (
+                    <div className="text-center py-4">読み込み中...</div>
                 ) : (
                     <form onSubmit={handleSubmit}>
                         <div className="overflow-x-auto">
+                            {existingSubmission && (
+                                <div className="bg-blue-50 p-4 mb-4 rounded border border-blue-200">
+                                    <p className="font-semibold text-blue-700 text-center">
+                                        すでに提出済みです（提出ID: {existingSubmission.id}）
+                                    </p>
+                                </div>
+                            )}
                             <table className="border mb-4 min-w-max">
                                 <thead>
                                     <tr className="bg-gray-100">
@@ -126,9 +191,15 @@ export default function EntrySubmitPage() {
                                                 return (
                                                     <td
                                                         key={hour}
-                                                        className={`border px-1 py-1 text-center cursor-pointer select-none transition w-8 h-8 align-middle ${isSelected ? 'bg-blue-400 text-white' : 'bg-white hover:bg-blue-100'}`}
+                                                        className={`border px-1 py-1 text-center select-none transition w-8 h-8 align-middle ${isSelected
+                                                            ? 'bg-blue-400 text-white'
+                                                            : 'bg-white hover:bg-blue-100'
+                                                            } ${existingSubmission
+                                                                ? 'cursor-default'
+                                                                : 'cursor-pointer'
+                                                            }`}
                                                         style={{ minWidth: 32, maxWidth: 32, width: 32, minHeight: 32, height: 32 }}
-                                                        onClick={() => !submitLoading && handleCellClick(date, hour)}
+                                                        onClick={() => !existingSubmission && !submitLoading && handleCellClick(date, hour)}
                                                     >
                                                         <span style={{ display: 'inline-block', width: '1em', textAlign: 'center' }}>
                                                             {isSelected ? '●' : '\u00A0'}
@@ -147,13 +218,19 @@ export default function EntrySubmitPage() {
                         {success && (
                             <div className="text-green-600 text-center text-sm mb-2">提出が完了しました。リダイレクトします...</div>
                         )}
-                        <button
-                            type="submit"
-                            className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50 w-full"
-                            disabled={submitLoading}
-                        >
-                            {submitLoading ? "提出中..." : "まとめて提出"}
-                        </button>
+                        {!existingSubmission ? (
+                            <button
+                                type="submit"
+                                className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition disabled:opacity-50 w-full"
+                                disabled={submitLoading}
+                            >
+                                {submitLoading ? "提出中..." : "まとめて提出"}
+                            </button>
+                        ) : (
+                            <div className="bg-gray-300 text-gray-600 rounded px-4 py-2 font-semibold w-full text-center">
+                                提出済み
+                            </div>
+                        )}
                     </form>
                 )}
             </div>
