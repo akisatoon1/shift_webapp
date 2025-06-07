@@ -316,3 +316,74 @@ func PostSubmissionsRequest(ctx *context.AppContext, w http.ResponseWriter, r *h
 	json.NewEncoder(w).Encode(response)
 	return nil
 }
+
+func GetMySubmissionRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.Request) *AppError {
+	// ログインしているユーザーのIDを取得する
+	userID, isLoggedIn := auth.GetUserID(ctx, r)
+	if !isLoggedIn {
+		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
+	}
+
+	// シフトリクエストのIDを取得する
+	requestId := r.PathValue("request_id")
+	requestIdInt, err := strconv.Atoi(requestId)
+	if err != nil {
+		return NewAppError(err, "request_idが整数ではありません", http.StatusBadRequest)
+	}
+
+	// 自分の提出を取得
+	var sub model.Submission
+	submission, err := sub.FindByRequestIDAndSubmitterID(ctx, requestIdInt, userID)
+	if err != nil {
+		return NewAppError(err, "提出情報の取得に失敗しました", http.StatusInternalServerError)
+	}
+
+	// 提出がない場合は空のレスポンスを返す
+	if submission == nil {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"submission": nil,
+		})
+		return nil
+	}
+
+	// エントリー情報をDTOに変換
+	type EntryDTO struct {
+		ID   int    `json:"id"`
+		Date string `json:"date"`
+		Hour int    `json:"hour"`
+	}
+
+	var entriesInfo []EntryDTO
+	for _, entry := range submission.Entries {
+		entryInfo := EntryDTO{
+			ID:   entry.ID,
+			Date: entry.Date.Format(),
+			Hour: entry.Hour,
+		}
+		entriesInfo = append(entriesInfo, entryInfo)
+	}
+
+	// レスポンスDTOを作成
+	type SubmissionDTO struct {
+		ID      int          `json:"id"`
+		User    dto.UserInfo `json:"user"`
+		Entries []EntryDTO   `json:"entries"`
+	}
+
+	response := struct {
+		Submission *SubmissionDTO `json:"submission"`
+	}{
+		Submission: &SubmissionDTO{
+			ID: submission.ID,
+			User: dto.UserInfo{
+				ID:   submission.Submitter.ID,
+				Name: submission.Submitter.Name,
+			},
+			Entries: entriesInfo,
+		},
+	}
+
+	json.NewEncoder(w).Encode(response)
+	return nil
+}

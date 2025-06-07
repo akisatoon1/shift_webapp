@@ -46,7 +46,7 @@ type DB interface {
 	GetRequestByID(id int) (Request, error)
 	GetEntriesBySubmissionID(submissionID int) ([]Entry, error)
 	GetSubmissionsByRequestID(requestID int) ([]Submission, error)
-	AlreadySubmitted(requestID int, submitterID int) (bool, error)
+	GetSubmissionByRequestIDAndSubmitterID(requestID int, submitterID int) (*Submission, error)
 	CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error)
 	CreateEntries(entries []Entry) ([]int, error)
 	CreateSubmission(submitterID int, requestID int) (int, error)

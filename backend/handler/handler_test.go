@@ -394,3 +394,145 @@ func TestLogoutHandler(t *testing.T) {
 		t.Errorf("logout後、login_session Cookieが無効化されていません")
 	}
 }
+
+func TestGetMySubmissionRequest(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+
+	// 共通のテストデータ
+	testUser := db.User{
+		ID:        1,
+		LoginID:   "employee",
+		Password:  string(hashedPassword),
+		Name:      "従業員ユーザー",
+		Role:      auth.RoleEmployee,
+		CreatedAt: "2024-06-01 00:00:00",
+	}
+
+	testManager := db.User{
+		ID:        2,
+		LoginID:   "manager",
+		Password:  string(hashedPassword),
+		Name:      "管理者ユーザー",
+		Role:      auth.RoleManager,
+		CreatedAt: "2024-06-01 00:00:00",
+	}
+
+	testRequest := db.Request{
+		ID:        1,
+		CreatorID: 2,
+		StartDate: "2024-06-01",
+		EndDate:   "2024-06-30",
+		Deadline:  "2024-05-25 00:00:00",
+		CreatedAt: "2024-06-01 00:00:00",
+	}
+
+	testSubmission := db.Submission{
+		ID:          1,
+		RequestID:   1,
+		SubmitterID: 1,
+		CreatedAt:   "2024-06-01 10:00:00",
+		UpdatedAt:   "2024-06-01 10:00:00",
+	}
+
+	testEntries := []db.Entry{
+		{ID: 1, SubmissionID: 1, Date: "2024-06-01", Hour: 8},
+		{ID: 2, SubmissionID: 1, Date: "2024-06-02", Hour: 6},
+	}
+
+	// setupTest sets up the test environment with the given submission state
+	setupTest := func(hasSubmission bool) (*context.AppContext, *http.ServeMux, []*http.Cookie) {
+		submissions := []db.Submission{}
+		entries := []db.Entry{}
+
+		if hasSubmission {
+			submissions = []db.Submission{testSubmission}
+			entries = testEntries
+		}
+
+		appCtx := newTestContext(
+			[]db.Request{testRequest},
+			[]db.User{testUser, testManager},
+			entries,
+			submissions,
+		)
+
+		mux := setHandlerToEndpoint(appCtx, "GET /requests/{request_id}/submissions/mine", GetMySubmissionRequest)
+		cookies := getLoginCookies(appCtx, "employee", "password")
+
+		return appCtx, mux, cookies
+	}
+
+	// executeRequest performs the test request with the given parameters
+	executeRequest := func(mux *http.ServeMux, path string, cookies []*http.Cookie) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("GET", path, nil)
+		if cookies != nil {
+			addCookiesToRequest(req, cookies)
+		}
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		return w
+	}
+
+	// テストケース1: 通常ケース - ユーザーが提出を持っている場合
+	t.Run("User has a submission", func(t *testing.T) {
+		_, mux, cookies := setupTest(true)
+		w := executeRequest(mux, "/requests/1/submissions/mine", cookies)
+
+		AssertCode(t, w.Code, http.StatusOK, w.Body.Bytes())
+
+		wantJSON := `
+		{
+			"submission": {
+				"id": 1,
+				"user": {"id": 1, "name": "従業員ユーザー"},
+				"entries": [
+					{
+						"id": 1,
+						"date": "2024-06-01",
+						"hour": 8
+					},
+					{
+						"id": 2,
+						"date": "2024-06-02",
+						"hour": 6
+					}
+				]
+			}
+		}
+		`
+		AssertRes(t, w.Body.Bytes(), wantJSON)
+	})
+
+	// テストケース2: 通常ケース - ユーザーが提出を持っていない場合
+	t.Run("User has no submission", func(t *testing.T) {
+		_, mux, cookies := setupTest(false)
+		w := executeRequest(mux, "/requests/1/submissions/mine", cookies)
+
+		AssertCode(t, w.Code, http.StatusOK, w.Body.Bytes())
+
+		wantJSON := `
+		{
+			"submission": null
+		}
+		`
+		AssertRes(t, w.Body.Bytes(), wantJSON)
+	})
+
+	// テストケース3: エラーケース - ユーザーがログインしていない場合
+	t.Run("User not logged in", func(t *testing.T) {
+		_, mux, _ := setupTest(true)
+		w := executeRequest(mux, "/requests/1/submissions/mine", nil)
+
+		AssertCode(t, w.Code, http.StatusUnauthorized, w.Body.Bytes())
+	})
+
+	// テストケース4: エラーケース - 無効なリクエストID
+	t.Run("Invalid request ID", func(t *testing.T) {
+		_, mux, cookies := setupTest(true)
+		w := executeRequest(mux, "/requests/999/submissions/mine", cookies)
+
+		if w.Code == http.StatusOK {
+			t.Fatal("expected a status not ok for invalid request ID, but got ", w.Code)
+		}
+	})
+}

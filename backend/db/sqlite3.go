@@ -126,14 +126,20 @@ func (db *Sqlite3DB) GetSubmissionsByRequestID(requestID int) ([]Submission, err
 	return submissions, nil
 }
 
-func (db *Sqlite3DB) AlreadySubmitted(requestID int, submitterID int) (bool, error) {
-	var count int
-	row := db.Conn.QueryRow("SELECT COUNT(*) FROM submissions WHERE request_id = ? AND submitter_id = ?", requestID, submitterID)
-	err := row.Scan(&count)
-	if err != nil {
-		return false, err
+func (db *Sqlite3DB) GetSubmissionByRequestIDAndSubmitterID(requestID int, submitterID int) (*Submission, error) {
+	var submission Submission
+	row := db.Conn.QueryRow(
+		"SELECT id, request_id, submitter_id, created_at, updated_at FROM submissions WHERE request_id = ? AND submitter_id = ?",
+		requestID, submitterID,
+	)
+	err := row.Scan(&submission.ID, &submission.RequestID, &submission.SubmitterID, &submission.CreatedAt, &submission.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil // 存在しない場合はnilを返す
 	}
-	return count > 0, nil
+	if err != nil {
+		return nil, err
+	}
+	return &submission, nil
 }
 
 // 新しいシフトリクエストを作成

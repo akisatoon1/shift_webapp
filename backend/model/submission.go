@@ -69,6 +69,60 @@ func (*Submission) FindByRequestID(ctx *context.AppContext, requestID int) ([]Su
 	return submissions, nil
 }
 
+func (*Submission) FindByRequestIDAndSubmitterID(ctx *context.AppContext, requestID, submitterID int) (*Submission, error) {
+	// シフトリクエストIDが存在するかチェック
+	var request Request
+	_, err := request.FindByID(ctx, requestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 提出者が従業員であるか確認する
+	var user User
+	user, err = user.FindByID(ctx, submitterID)
+	if err != nil {
+		return nil, err
+	}
+	if user.Role != auth.RoleEmployee {
+		return nil, ErrForbidden
+	}
+
+	// DBから提出を取得
+	submissionRec, err := ctx.GetDB().GetSubmissionByRequestIDAndSubmitterID(requestID, submitterID)
+	if err != nil {
+		return nil, err
+	}
+
+	if submissionRec == nil {
+		return nil, nil
+	}
+
+	var e entry
+	entries, err := e.findBySubmissionID(ctx, submissionRec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	createdAt, err := NewDateTime(submissionRec.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	updatedAt, err := NewDateTime(submissionRec.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Submission{
+		ID:          submissionRec.ID,
+		RequestID:   submissionRec.RequestID,
+		SubmitterID: submissionRec.SubmitterID,
+		Submitter:   user,
+		Entries:     entries,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+	}, nil
+}
+
 type NewSubmission struct {
 	RequestID   int
 	SubmitterID int
@@ -94,11 +148,11 @@ func (*Submission) Create(ctx *context.AppContext, newSubmission NewSubmission) 
 	}
 
 	// 提出済みの場合はエラー
-	alreadySubmitted, err := ctx.GetDB().AlreadySubmitted(newSubmission.RequestID, newSubmission.SubmitterID)
+	subRec, err := ctx.GetDB().GetSubmissionByRequestIDAndSubmitterID(newSubmission.RequestID, newSubmission.SubmitterID)
 	if err != nil {
 		return 0, err
 	}
-	if alreadySubmitted {
+	if subRec != nil {
 		return 0, errors.New("already submitted")
 	}
 

@@ -218,3 +218,108 @@ func TestCreateSubmission6(t *testing.T) {
 		t.Errorf("Expected InputError for invalid hour, got %v", err)
 	}
 }
+
+func TestFindByRequestIDAndSubmitterID(t *testing.T) {
+	// テスト用のコンテキストを作成
+	ctx := newTestContext(
+		[]db.User{
+			{ID: 1, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: "2024-06-01 00:00:00"},
+			{ID: 2, LoginID: "test_user_2", Password: "password2", Name: "テストユーザー2", Role: auth.RoleEmployee, CreatedAt: "2023-01-01 00:00:00"},
+			{ID: 3, LoginID: "test_user_3", Password: "password3", Name: "テストユーザー3", Role: auth.RoleEmployee, CreatedAt: "2023-01-03 00:00:00"},
+		},
+		[]db.Request{
+			{ID: 1, CreatorID: 1, StartDate: "2024-06-01", EndDate: "2024-06-07", Deadline: "2024-06-01 00:00:00", CreatedAt: "2024-06-01 00:00:00"},
+			{ID: 2, CreatorID: 1, StartDate: "2024-07-01", EndDate: "2024-07-07", Deadline: "2024-07-01 00:00:00", CreatedAt: "2024-06-15 00:00:00"},
+		},
+		[]db.Entry{
+			{ID: 1, SubmissionID: 1, Date: "2024-06-01", Hour: 8},
+			{ID: 2, SubmissionID: 1, Date: "2024-06-02", Hour: 9},
+		},
+		[]db.Submission{
+			{ID: 1, RequestID: 1, SubmitterID: 2, CreatedAt: "2023-01-01 00:00:00", UpdatedAt: "2023-01-02 00:00:00"},
+		},
+	)
+
+	t.Run("存在するリクエストと提出者", func(t *testing.T) {
+		var s Submission
+		submission, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 2)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if submission == nil {
+			t.Fatal("Expected submission to be found, got nil")
+		}
+
+		// 結果の検証
+		want := &Submission{
+			ID:          1,
+			RequestID:   1,
+			SubmitterID: 2,
+			Submitter: User{
+				ID:        2,
+				LoginID:   "test_user_2",
+				Password:  "password2",
+				Name:      "テストユーザー2",
+				Role:      auth.RoleEmployee,
+				CreatedAt: mustNewDateTime("2023-01-01 00:00:00"),
+			},
+			Entries: []entry{
+				{ID: 1, SubmissionID: 1, Date: mustNewDateOnly("2024-06-01"), Hour: 8},
+				{ID: 2, SubmissionID: 1, Date: mustNewDateOnly("2024-06-02"), Hour: 9},
+			},
+			CreatedAt: mustNewDateTime("2023-01-01 00:00:00"),
+			UpdatedAt: mustNewDateTime("2023-01-02 00:00:00"),
+		}
+		assert(t, submission, want)
+	})
+
+	t.Run("存在しないリクエストID", func(t *testing.T) {
+		var s Submission
+		_, err := s.FindByRequestIDAndSubmitterID(ctx, 999, 2)
+		if err == nil {
+			t.Errorf("Expected error for non-existent request ID, got nil")
+		}
+	})
+
+	t.Run("存在しない提出者ID", func(t *testing.T) {
+		var s Submission
+		_, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 999)
+		if err == nil {
+			t.Errorf("Expected error for non-existent submitter ID, got nil")
+		}
+	})
+
+	t.Run("提出者がマネージャー（非従業員）", func(t *testing.T) {
+		var s Submission
+		_, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 1)
+		if err != ErrForbidden {
+			t.Errorf("Expected ErrForbidden for non-employee user, got %v", err)
+		}
+	})
+
+	t.Run("存在しない提出", func(t *testing.T) {
+		// ユーザー3は従業員だが、リクエスト1に対して提出していない
+		var s Submission
+		submission, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 3)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if submission != nil {
+			t.Errorf("Expected nil submission for user without submission, got %+v", submission)
+		}
+	})
+
+	t.Run("リクエスト2に対する提出なし", func(t *testing.T) {
+		var s Submission
+		submission, err := s.FindByRequestIDAndSubmitterID(ctx, 2, 2)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if submission != nil {
+			t.Errorf("Expected nil submission for request without submissions, got %+v", submission)
+		}
+	})
+}

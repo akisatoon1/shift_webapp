@@ -64,13 +64,13 @@ func (m *mockDB) GetSubmissionsByRequestID(requestID int) ([]Submission, error) 
 	return submissions, nil
 }
 
-func (m *mockDB) AlreadySubmitted(requestID int, submitterID int) (bool, error) {
+func (m *mockDB) GetSubmissionByRequestIDAndSubmitterID(requestID int, submitterID int) (*Submission, error) {
 	for _, submission := range m.Submissions {
 		if submission.RequestID == requestID && submission.SubmitterID == submitterID {
-			return true, nil
+			return &submission, nil
 		}
 	}
-	return false, nil
+	return nil, nil
 }
 
 func (m *mockDB) CreateRequest(creatorID int, startDate string, endDate string, deadline string) (int, error) {

@@ -126,6 +126,30 @@
 }
 ```
 
+### GET /requests/{request_id}/submissions/mine
+**自分のシフト提出を取得**
+#### Response body
+```
+{
+    "submission": {
+        "id": number,
+
+        "user": {
+            "id": number,
+            "name": string
+        },
+
+        "entries": [
+            {
+                "id": number,
+                "date": string,
+                "hour": number
+            }
+        ]
+    } | null
+}
+```
+
 ### POST /requests/{request_id}/submissions
 **新しいシフトエントリーを提出(追加)して、新しいIDを返す**
 #### Request body
