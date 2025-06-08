@@ -354,7 +354,7 @@ func GetMySubmissionRequest(ctx *context.AppContext, w http.ResponseWriter, r *h
 		Hour int    `json:"hour"`
 	}
 
-	var entriesInfo []EntryDTO
+	entriesInfo := make([]EntryDTO, 0, len(submission.Entries))
 	for _, entry := range submission.Entries {
 		entryInfo := EntryDTO{
 			ID:   entry.ID,
