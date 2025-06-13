@@ -1,8 +1,9 @@
-package model
+package usecase
 
 import (
 	"backend/auth"
 	"backend/db"
+	"backend/domain"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func TestGetUserByID(t *testing.T) {
 		[]db.Submission{},
 	)
 
-	var u User
+	var u IUserUsecase = &userUsecase{}
 
 	// 正常系
 	got, err := u.FindByID(ctx, 1)
@@ -24,7 +25,7 @@ func TestGetUserByID(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := User{
+	want := domain.User{
 		ID:        1,
 		LoginID:   "testuser",
 		Password:  "password",

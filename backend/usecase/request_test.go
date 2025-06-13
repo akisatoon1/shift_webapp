@@ -1,8 +1,9 @@
-package model
+package usecase
 
 import (
 	"backend/auth"
 	"backend/db"
+	"backend/domain"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestGetRequestByID(t *testing.T) {
 		[]db.Submission{},
 	)
 
-	var r Request
+	var r IRequestUsecase = &requestUsecase{}
 
 	// 正常系
 	got, err := r.FindByID(ctx, 1)
@@ -26,9 +27,9 @@ func TestGetRequestByID(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := Request{
+	want := domain.Request{
 		ID:        1,
-		Creator:   User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
+		Creator:   domain.User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
 		StartDate: mustNewDateOnly("2024-06-01"),
 		EndDate:   mustNewDateOnly("2024-06-01"),
 		Deadline:  mustNewDateTime("2024-06-01 00:00:00"),
@@ -57,15 +58,15 @@ func TestGetRequests(t *testing.T) {
 		[]db.Submission{},
 	)
 
-	var r Request
+	var r IRequestUsecase = &requestUsecase{}
 	got, err := r.FindAll(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := []Request{
-		{ID: 1, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
-		{ID: 2, Creator: User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
+	want := []domain.Request{
+		{ID: 1, Creator: domain.User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
+		{ID: 2, Creator: domain.User{ID: 2, LoginID: "test_manager", Password: "password", Name: "テストマネージャー", Role: auth.RoleManager, CreatedAt: mustNewDateTime("2024-06-01 00:00:00")}, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00"), CreatedAt: mustNewDateTime("2024-06-01 00:00:00")},
 	}
 
 	assert(t, got, want)
@@ -82,7 +83,7 @@ func TestCreateRequest(t *testing.T) {
 		[]db.Submission{},
 	)
 
-	var r Request
+	var r IRequestUsecase = &requestUsecase{}
 
 	// 正常系
 	got, err := r.Create(ctx, NewRequest{CreatorID: 2, StartDate: mustNewDateOnly("2024-06-01"), EndDate: mustNewDateOnly("2024-06-01"), Deadline: mustNewDateTime("2024-06-01 00:00:00")})

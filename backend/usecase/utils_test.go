@@ -1,13 +1,14 @@
-package model
+package usecase
 
 import (
+	"backend/domain"
 	"testing"
 )
 
 func TestIsBeforeOrEqual(t *testing.T) {
 	tests := []struct {
-		a    DateOnly
-		b    DateOnly
+		a    domain.DateOnly
+		b    domain.DateOnly
 		want bool
 	}{
 		{mustNewDateOnly("2024-06-01"), mustNewDateOnly("2024-06-01"), true},

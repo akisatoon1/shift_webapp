@@ -3,8 +3,9 @@ package handler
 import (
 	"backend/auth"
 	"backend/context"
+	"backend/domain"
 	"backend/handler/dto"
-	"backend/model"
+	"backend/usecase"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -41,8 +42,7 @@ func GetSessionRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 	}
 
 	// ユーザー情報を取得
-	var usr model.User
-	user, err := usr.FindByID(ctx, userID)
+	user, err := usecase.NewUserUsecase().FindByID(ctx, userID)
 	if err != nil {
 		return NewAppError(err, "セッションの取得に失敗しました", http.StatusInternalServerError)
 	}
@@ -84,7 +84,7 @@ func GetRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.
 		return NewAppError(ErrNotLoggedIn, "ログインしていません", http.StatusUnauthorized)
 	}
 
-	var req model.Request
+	req := usecase.NewRequestUsecase()
 	requests, err := req.FindAll(ctx)
 	if err != nil {
 		return NewAppError(err, "シフトリクエストの取得に失敗しました", http.StatusInternalServerError)
@@ -124,16 +124,14 @@ func GetRequestRequest(ctx *context.AppContext, w http.ResponseWriter, r *http.R
 	}
 
 	// リクエスト情報を取得
-	var req model.Request
-	request, err := req.FindByID(ctx, requestIdInt)
+	request, err := usecase.NewRequestUsecase().FindByID(ctx, requestIdInt)
 	if err != nil {
 		// TODO: errcode修正
 		return NewAppError(err, "リクエストの取得に失敗しました", http.StatusInternalServerError)
 	}
 
 	// 提出情報を取得
-	var sub model.Submission
-	submissions, err := sub.FindByRequestID(ctx, requestIdInt)
+	submissions, err := usecase.NewSubmissionUsecase().FindByRequestID(ctx, requestIdInt)
 	if err != nil {
 		return NewAppError(err, "提出情報の取得に失敗しました", http.StatusInternalServerError)
 	}
@@ -202,35 +200,34 @@ func PostRequestsRequest(ctx *context.AppContext, w http.ResponseWriter, r *http
 
 	// DTOからモデルに変換
 	// 文字列の日付をモデルの型に変換
-	startDate, err := model.NewDateOnly(createReq.StartDate)
+	startDate, err := domain.NewDateOnly(createReq.StartDate)
 	if err != nil {
 		return NewAppError(err, "開始日のフォーマットが不正です", http.StatusBadRequest)
 	}
 
-	endDate, err := model.NewDateOnly(createReq.EndDate)
+	endDate, err := domain.NewDateOnly(createReq.EndDate)
 	if err != nil {
 		return NewAppError(err, "終了日のフォーマットが不正です", http.StatusBadRequest)
 	}
 
-	deadline, err := model.NewDateTime(createReq.Deadline)
+	deadline, err := domain.NewDateTime(createReq.Deadline)
 	if err != nil {
 		return NewAppError(err, "期限日のフォーマットが不正です", http.StatusBadRequest)
 	}
 
 	// 新しいシフトリクエストを作成する
-	var req model.Request
-	requestID, err := req.Create(ctx, model.NewRequest{
+	requestID, err := usecase.NewRequestUsecase().Create(ctx, usecase.NewRequest{
 		CreatorID: userID,
 		StartDate: startDate,
 		EndDate:   endDate,
 		Deadline:  deadline,
 	})
 	if err != nil {
-		if errors.Is(err, model.ErrForbidden) {
+		if errors.Is(err, usecase.ErrForbidden) {
 			return NewAppError(err, "権限がありません", http.StatusForbidden)
 		}
 
-		var inputErr model.InputError
+		var inputErr usecase.InputError
 		if errors.As(err, &inputErr) {
 			return NewAppError(inputErr, inputErr.Message(), http.StatusBadRequest)
 		}
@@ -270,35 +267,34 @@ func PostSubmissionsRequest(ctx *context.AppContext, w http.ResponseWriter, r *h
 	}
 
 	// モデルに渡す形に変換する
-	newSubmission := model.NewSubmission{
+	newSubmission := usecase.NewSubmission{
 		RequestID:   requestIdInt,
 		SubmitterID: userID,
-		NewEntries:  []model.NewEntry{},
+		NewEntries:  []usecase.NewEntry{},
 	}
 
 	// DTOからモデルに変換
 	for _, entry := range entryRequests {
 		// 日付文字列をモデルの型に変換
-		dateOnly, err := model.NewDateOnly(entry.Date)
+		dateOnly, err := domain.NewDateOnly(entry.Date)
 		if err != nil {
 			return NewAppError(err, "日付のフォーマットが不正です", http.StatusBadRequest)
 		}
 
-		newSubmission.NewEntries = append(newSubmission.NewEntries, model.NewEntry{
+		newSubmission.NewEntries = append(newSubmission.NewEntries, usecase.NewEntry{
 			Date: dateOnly,
 			Hour: entry.Hour,
 		})
 	}
 
 	// 新しい提出を作成
-	var sub model.Submission
-	submissionID, err := sub.Create(ctx, newSubmission)
+	submissionID, err := usecase.NewSubmissionUsecase().Create(ctx, newSubmission)
 	if err != nil {
-		if errors.Is(err, model.ErrForbidden) {
+		if errors.Is(err, usecase.ErrForbidden) {
 			return NewAppError(err, "権限がありません", http.StatusForbidden)
 		}
 
-		var inputErr model.InputError
+		var inputErr usecase.InputError
 		if errors.As(err, &inputErr) {
 			return NewAppError(inputErr, inputErr.Message(), http.StatusBadRequest)
 		}
@@ -332,8 +328,7 @@ func GetMySubmissionRequest(ctx *context.AppContext, w http.ResponseWriter, r *h
 	}
 
 	// 自分の提出を取得
-	var sub model.Submission
-	submission, err := sub.FindByRequestIDAndSubmitterID(ctx, requestIdInt, userID)
+	submission, err := usecase.NewSubmissionUsecase().FindByRequestIDAndSubmitterID(ctx, requestIdInt, userID)
 	if err != nil {
 		return NewAppError(err, "提出情報の取得に失敗しました", http.StatusInternalServerError)
 	}

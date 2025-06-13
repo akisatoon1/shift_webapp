@@ -1,8 +1,9 @@
-package model
+package usecase
 
 import (
 	"backend/auth"
 	"backend/db"
+	"backend/domain"
 	"testing"
 )
 
@@ -23,13 +24,12 @@ func TestGetEntriesBySubmissionID(t *testing.T) {
 			{ID: 1, RequestID: 1, SubmitterID: 1, CreatedAt: "2024-06-01 00:00:00", UpdatedAt: "2024-06-01 00:00:00"},
 		},
 	)
-	var e entry
-	got, err := e.findBySubmissionID(ctx, 1)
+	got, err := findEntriesBySubmissionID(ctx, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := []entry{
+	want := []domain.Entry{
 		{ID: 1, SubmissionID: 1, Date: mustNewDateOnly("2024-06-01"), Hour: 8},
 		{ID: 2, SubmissionID: 1, Date: mustNewDateOnly("2024-06-01"), Hour: 9},
 	}
@@ -49,10 +49,8 @@ func TestCreateEntries(t *testing.T) {
 		[]db.Submission{},
 	)
 
-	var e entry
-
 	// 正常系
-	got, err := e.create(ctx, 1, []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}, {Date: mustNewDateOnly("2024-06-01"), Hour: 9}})
+	got, err := createEntries(ctx, 1, []NewEntry{{Date: mustNewDateOnly("2024-06-01"), Hour: 8}, {Date: mustNewDateOnly("2024-06-01"), Hour: 9}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

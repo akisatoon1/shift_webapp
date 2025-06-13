@@ -1,47 +1,50 @@
-package model
+package usecase
 
 import (
 	"backend/auth"
 	"backend/context"
+	"backend/domain"
 	"errors"
 )
 
-// シフトリクエスト
-type Request struct {
-	ID        int
-	Creator   User
-	StartDate DateOnly
-	EndDate   DateOnly
-	Deadline  DateTime
-	CreatedAt DateTime
+type IRequestUsecase interface {
+	FindByID(ctx *context.AppContext, requestID int) (domain.Request, error)
+	FindAll(ctx *context.AppContext) ([]domain.Request, error)
+	Create(ctx *context.AppContext, newRequest NewRequest) (int, error)
 }
 
-func (*Request) FindByID(ctx *context.AppContext, requestID int) (Request, error) {
+type requestUsecase struct{}
+
+func NewRequestUsecase() IRequestUsecase {
+	return &requestUsecase{}
+}
+
+func (*requestUsecase) FindByID(ctx *context.AppContext, requestID int) (domain.Request, error) {
 	// シフトリクエストを取得
 	requestRec, err := ctx.GetDB().GetRequestByID(requestID)
 	if err != nil {
-		return Request{}, err
+		return domain.Request{}, err
 	}
 
 	// 作成者ユーザーを取得
 	userRec, err := ctx.GetDB().GetUserByID(requestRec.CreatorID)
 	if err != nil {
-		return Request{}, err
+		return domain.Request{}, err
 	}
 
 	// 日付を適切な型に変換
-	start_date, err := NewDateOnly(requestRec.StartDate)
-	end_date, err := NewDateOnly(requestRec.EndDate)
-	deadline, err := NewDateTime(requestRec.Deadline)
-	reqCreated_at, err := NewDateTime(requestRec.CreatedAt)
-	userCreated_at, err := NewDateTime(userRec.CreatedAt)
+	start_date, err := domain.NewDateOnly(requestRec.StartDate)
+	end_date, err := domain.NewDateOnly(requestRec.EndDate)
+	deadline, err := domain.NewDateTime(requestRec.Deadline)
+	reqCreated_at, err := domain.NewDateTime(requestRec.CreatedAt)
+	userCreated_at, err := domain.NewDateTime(userRec.CreatedAt)
 	if err != nil {
-		return Request{}, err
+		return domain.Request{}, err
 	}
 
-	return Request{
+	return domain.Request{
 		ID: requestRec.ID,
-		Creator: User{
+		Creator: domain.User{
 			ID:        userRec.ID,
 			LoginID:   userRec.LoginID,
 			Password:  userRec.Password,
@@ -56,17 +59,17 @@ func (*Request) FindByID(ctx *context.AppContext, requestID int) (Request, error
 	}, nil
 }
 
-func (*Request) FindAll(ctx *context.AppContext) ([]Request, error) {
+func (*requestUsecase) FindAll(ctx *context.AppContext) ([]domain.Request, error) {
 	// すべてのシフトリクエストを取得
 	requestRecs, err := ctx.GetDB().GetRequests()
 	if err != nil {
 		return nil, err
 	}
 
-	var requests []Request
+	var requests []domain.Request
 	for _, rec := range requestRecs {
-		var request Request
-		foundRequest, err := request.FindByID(ctx, rec.ID)
+		var r IRequestUsecase = &requestUsecase{}
+		foundRequest, err := r.FindByID(ctx, rec.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -79,12 +82,12 @@ func (*Request) FindAll(ctx *context.AppContext) ([]Request, error) {
 // リクエスト作成用のコマンド構造体
 type NewRequest struct {
 	CreatorID int
-	StartDate DateOnly
-	EndDate   DateOnly
-	Deadline  DateTime
+	StartDate domain.DateOnly
+	EndDate   domain.DateOnly
+	Deadline  domain.DateTime
 }
 
-func (*Request) Create(ctx *context.AppContext, newRequest NewRequest) (int, error) {
+func (*requestUsecase) Create(ctx *context.AppContext, newRequest NewRequest) (int, error) {
 	// 作成するユーザーがマネージャーであるか確認する
 	isUserManager, err := auth.IsManager(ctx, newRequest.CreatorID)
 	if err != nil {

@@ -1,9 +1,10 @@
-package model
+package usecase
 
 import (
 	"backend/auth"
 	"backend/context"
 	"backend/db"
+	"backend/domain"
 	"testing"
 )
 
@@ -27,7 +28,7 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 		},
 	)
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 
 	// シフトリクエストIDが存在しない場合のテスト
 	_, err := s.FindByRequestID(ctx, 123)
@@ -41,12 +42,12 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	want := []Submission{
+	want := []domain.Submission{
 		{
 			ID:          1,
 			RequestID:   1,
 			SubmitterID: 2,
-			Submitter: User{
+			Submitter: domain.User{
 				ID:        2,
 				LoginID:   "test_user_2",
 				Password:  "password2",
@@ -54,7 +55,7 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 				Role:      auth.RoleEmployee,
 				CreatedAt: mustNewDateTime("2023-01-01 00:00:00"),
 			},
-			Entries: []entry{
+			Entries: []domain.Entry{
 				{ID: 1, SubmissionID: 1, Date: mustNewDateOnly("2024-06-01"), Hour: 8},
 			},
 			CreatedAt: mustNewDateTime("2023-01-01 00:00:00"),
@@ -64,7 +65,7 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 			ID:          2,
 			RequestID:   1,
 			SubmitterID: 3,
-			Submitter: User{
+			Submitter: domain.User{
 				ID:        3,
 				LoginID:   "test_user_3",
 				Password:  "password3",
@@ -72,7 +73,7 @@ func TestGetSubmissionsByRequestID(t *testing.T) {
 				Role:      auth.RoleEmployee,
 				CreatedAt: mustNewDateTime("2023-01-03 00:00:00"),
 			},
-			Entries: []entry{
+			Entries: []domain.Entry{
 				{ID: 2, SubmissionID: 2, Date: mustNewDateOnly("2024-06-01"), Hour: 9},
 			},
 			CreatedAt: mustNewDateTime("2023-01-03 00:00:00"),
@@ -103,7 +104,7 @@ func createSubmissionTestContext() *context.AppContext {
 func TestCreateSubmission1(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 	submissionID, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
@@ -124,7 +125,7 @@ func TestCreateSubmission1(t *testing.T) {
 func TestCreateSubmission2(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   9999,
 		SubmitterID: 2,
@@ -141,7 +142,7 @@ func TestCreateSubmission2(t *testing.T) {
 func TestCreateSubmission3(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 3, // manager
@@ -158,7 +159,7 @@ func TestCreateSubmission3(t *testing.T) {
 func TestCreateSubmission4(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 
 	// 最初の提出
 	_, err := s.Create(ctx, NewSubmission{
@@ -189,7 +190,7 @@ func TestCreateSubmission4(t *testing.T) {
 func TestCreateSubmission5(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
@@ -206,7 +207,7 @@ func TestCreateSubmission5(t *testing.T) {
 func TestCreateSubmission6(t *testing.T) {
 	ctx := createSubmissionTestContext()
 
-	var s Submission
+	var s ISubmissionUsecase = &submissionUsecase{}
 	_, err := s.Create(ctx, NewSubmission{
 		RequestID:   1,
 		SubmitterID: 2,
@@ -241,7 +242,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 	)
 
 	t.Run("存在するリクエストと提出者", func(t *testing.T) {
-		var s Submission
+		var s ISubmissionUsecase = &submissionUsecase{}
 		submission, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 2)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
@@ -252,11 +253,11 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 		}
 
 		// 結果の検証
-		want := &Submission{
+		want := &domain.Submission{
 			ID:          1,
 			RequestID:   1,
 			SubmitterID: 2,
-			Submitter: User{
+			Submitter: domain.User{
 				ID:        2,
 				LoginID:   "test_user_2",
 				Password:  "password2",
@@ -264,7 +265,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 				Role:      auth.RoleEmployee,
 				CreatedAt: mustNewDateTime("2023-01-01 00:00:00"),
 			},
-			Entries: []entry{
+			Entries: []domain.Entry{
 				{ID: 1, SubmissionID: 1, Date: mustNewDateOnly("2024-06-01"), Hour: 8},
 				{ID: 2, SubmissionID: 1, Date: mustNewDateOnly("2024-06-02"), Hour: 9},
 			},
@@ -275,7 +276,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 	})
 
 	t.Run("存在しないリクエストID", func(t *testing.T) {
-		var s Submission
+		var s ISubmissionUsecase = &submissionUsecase{}
 		_, err := s.FindByRequestIDAndSubmitterID(ctx, 999, 2)
 		if err == nil {
 			t.Errorf("Expected error for non-existent request ID, got nil")
@@ -283,7 +284,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 	})
 
 	t.Run("存在しない提出者ID", func(t *testing.T) {
-		var s Submission
+		var s ISubmissionUsecase = &submissionUsecase{}
 		_, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 999)
 		if err == nil {
 			t.Errorf("Expected error for non-existent submitter ID, got nil")
@@ -291,7 +292,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 	})
 
 	t.Run("提出者がマネージャー（非従業員）", func(t *testing.T) {
-		var s Submission
+		var s ISubmissionUsecase = &submissionUsecase{}
 		_, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 1)
 		if err != ErrForbidden {
 			t.Errorf("Expected ErrForbidden for non-employee user, got %v", err)
@@ -300,7 +301,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 
 	t.Run("存在しない提出", func(t *testing.T) {
 		// ユーザー3は従業員だが、リクエスト1に対して提出していない
-		var s Submission
+		var s ISubmissionUsecase = &submissionUsecase{}
 		submission, err := s.FindByRequestIDAndSubmitterID(ctx, 1, 3)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
@@ -312,7 +313,7 @@ func TestFindByRequestIDAndSubmitterID(t *testing.T) {
 	})
 
 	t.Run("リクエスト2に対する提出なし", func(t *testing.T) {
-		var s Submission
+		var s ISubmissionUsecase = &submissionUsecase{}
 		submission, err := s.FindByRequestIDAndSubmitterID(ctx, 2, 2)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)

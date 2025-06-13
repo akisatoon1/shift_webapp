@@ -1,25 +1,28 @@
-package model
+package usecase
 
 import (
 	"backend/auth"
 	"backend/context"
+	"backend/domain"
 	"errors"
 )
 
-type Submission struct {
-	ID          int
-	RequestID   int
-	SubmitterID int
-	Submitter   User
-	Entries     []entry
-	CreatedAt   DateTime
-	UpdatedAt   DateTime
+type ISubmissionUsecase interface {
+	FindByRequestID(ctx *context.AppContext, requestID int) ([]domain.Submission, error)
+	FindByRequestIDAndSubmitterID(ctx *context.AppContext, requestID, submitterID int) (*domain.Submission, error)
+	Create(ctx *context.AppContext, newSubmission NewSubmission) (int, error)
 }
 
-func (*Submission) FindByRequestID(ctx *context.AppContext, requestID int) ([]Submission, error) {
+type submissionUsecase struct{}
+
+func NewSubmissionUsecase() ISubmissionUsecase {
+	return &submissionUsecase{}
+}
+
+func (*submissionUsecase) FindByRequestID(ctx *context.AppContext, requestID int) ([]domain.Submission, error) {
 	// シフトリクエストIDが存在するかチェック
-	var request Request
-	_, err := request.FindByID(ctx, requestID)
+	var r IRequestUsecase = &requestUsecase{}
+	_, err := r.FindByID(ctx, requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,31 +34,30 @@ func (*Submission) FindByRequestID(ctx *context.AppContext, requestID int) ([]Su
 	}
 
 	// 提出一覧を構築
-	var submissions []Submission
+	var submissions []domain.Submission
 	for _, submissionRec := range submissionRecs {
-		createdAt, err := NewDateTime(submissionRec.CreatedAt)
+		createdAt, err := domain.NewDateTime(submissionRec.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		updatedAt, err := NewDateTime(submissionRec.UpdatedAt)
+		updatedAt, err := domain.NewDateTime(submissionRec.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
 
-		var user User
-		user, err = user.FindByID(ctx, submissionRec.SubmitterID)
+		var u IUserUsecase = &userUsecase{}
+		user, err := u.FindByID(ctx, submissionRec.SubmitterID)
 		if err != nil {
 			return nil, err
 		}
 
 		// entryは内部構造体なのでそのまま関数を使用
-		var e entry
-		entries, err := e.findBySubmissionID(ctx, submissionRec.ID)
+		entries, err := findEntriesBySubmissionID(ctx, submissionRec.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		submissions = append(submissions, Submission{
+		submissions = append(submissions, domain.Submission{
 			ID:          submissionRec.ID,
 			RequestID:   submissionRec.RequestID,
 			SubmitterID: submissionRec.SubmitterID,
@@ -69,17 +71,17 @@ func (*Submission) FindByRequestID(ctx *context.AppContext, requestID int) ([]Su
 	return submissions, nil
 }
 
-func (*Submission) FindByRequestIDAndSubmitterID(ctx *context.AppContext, requestID, submitterID int) (*Submission, error) {
+func (*submissionUsecase) FindByRequestIDAndSubmitterID(ctx *context.AppContext, requestID, submitterID int) (*domain.Submission, error) {
 	// シフトリクエストIDが存在するかチェック
-	var request Request
-	_, err := request.FindByID(ctx, requestID)
+	var r IRequestUsecase = &requestUsecase{}
+	_, err := r.FindByID(ctx, requestID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 提出者が従業員であるか確認する
-	var user User
-	user, err = user.FindByID(ctx, submitterID)
+	var u IUserUsecase = &userUsecase{}
+	user, err := u.FindByID(ctx, submitterID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,22 +99,21 @@ func (*Submission) FindByRequestIDAndSubmitterID(ctx *context.AppContext, reques
 		return nil, nil
 	}
 
-	var e entry
-	entries, err := e.findBySubmissionID(ctx, submissionRec.ID)
+	entries, err := findEntriesBySubmissionID(ctx, submissionRec.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	createdAt, err := NewDateTime(submissionRec.CreatedAt)
+	createdAt, err := domain.NewDateTime(submissionRec.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
-	updatedAt, err := NewDateTime(submissionRec.UpdatedAt)
+	updatedAt, err := domain.NewDateTime(submissionRec.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Submission{
+	return &domain.Submission{
 		ID:          submissionRec.ID,
 		RequestID:   submissionRec.RequestID,
 		SubmitterID: submissionRec.SubmitterID,
@@ -129,10 +130,10 @@ type NewSubmission struct {
 	NewEntries  []NewEntry
 }
 
-func (*Submission) Create(ctx *context.AppContext, newSubmission NewSubmission) (int, error) {
+func (*submissionUsecase) Create(ctx *context.AppContext, newSubmission NewSubmission) (int, error) {
 	// 提出者が従業員であるか確認する
-	var user User
-	foundUser, err := user.FindByID(ctx, newSubmission.SubmitterID)
+	var u IUserUsecase = &userUsecase{}
+	foundUser, err := u.FindByID(ctx, newSubmission.SubmitterID)
 	if err != nil {
 		return 0, err
 	}
@@ -141,8 +142,8 @@ func (*Submission) Create(ctx *context.AppContext, newSubmission NewSubmission) 
 	}
 
 	// シフトリクエストIDが存在するか確認する
-	var request Request
-	foundRequest, err := request.FindByID(ctx, newSubmission.RequestID)
+	var r IRequestUsecase = &requestUsecase{}
+	foundRequest, err := r.FindByID(ctx, newSubmission.RequestID)
 	if err != nil {
 		return 0, err
 	}
@@ -182,8 +183,7 @@ func (*Submission) Create(ctx *context.AppContext, newSubmission NewSubmission) 
 	}
 
 	// エントリーを作成
-	var e entry
-	_, err = e.create(ctx, submissionID, newSubmission.NewEntries)
+	_, err = createEntries(ctx, submissionID, newSubmission.NewEntries)
 	if err != nil {
 		return 0, err
 	}
